@@ -46,7 +46,7 @@ Three geometric attractors anchor persona state in embedding space.
 | Name | Symbol | Source | Represents |
 |------|--------|--------|------------|
 | Inference | $C_i$ | LFM 2.5 past conv output ($\mathbb{R}^{2048}$) | What Lucy makes of her experience |
-| Ontic | $C_o$ | Nomic Matryoshka model ($\mathbb{R}^{768}$) | Model-independent structural position |
+| Ontic | $C_o$ | Nomic Matryoshka pair (`nomic-embed-text-v1.5` / `nomic-embed-vision-v1.5`, shared $\mathbb{R}^{768}$) | Model-independent structural position |
 | Self | $C_s$ | Overlap of inference and ontic tours | Mutual confirmation: who Lucy is |
 
 The inference centroid $C_i$ tracks what Lucy attends to and how she integrates it — it is shaped by everything she processes, including the infotactic reading she does between operator turns. The ontic centroid $C_o$ is the outside view. The self centroid $C_s$ is the region of mutual confirmation. When $C_s$ is stable and well-populated, Lucy knows who she is. When it erodes, she is at risk.

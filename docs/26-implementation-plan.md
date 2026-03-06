@@ -150,7 +150,7 @@ Core schema objects:
 | `lucid.content` | Raw content storage referenced by nodes |
 | `lucid.belief_nodes` | Belief primitive: embeddings, provenance, affective fields, ingress/egress chains |
 | `lucid.node_embeddings_inf` | `vector(2048)` — inference space (LFM past conv tensors) |
-| `lucid.node_embeddings_ont` | `vector(768)` — ontic space (Nomic Matryoshka) |
+| `lucid.node_embeddings_ont` | `vector(768)` — ontic space (Nomic Matryoshka pair: text + vision, shared space) |
 | `lucid.belief_edges` | All edge types with Hebbian statistics |
 | `lucid.centroids` | Named centroid rows: $C_i$, $C_o$, $C_s$, $C_w$, $C_0$ |
 | `lucid.tour_closure` | Per-tour diagnostic outcomes |
