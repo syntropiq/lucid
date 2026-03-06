@@ -52,15 +52,18 @@ The `past_conv_*` tensors output by the decoder (shape `[1, 2048, 3]`, fixed-siz
 
 **Confirmed model parameters (all three cortices, from config.json):**
 
-| Model | `hidden_size` | `conv_dim` | `conv_L_cache` | `past_conv_*` shape |
-|---|---|---|---|---|
-| LFM2.5-1.2B-Thinking | 2048 | 2048 | 3 | `[1, 2048, 3]` |
-| LFM2.5-VL-1.6B | 2048 | 2048 | 3 | `[1, 2048, 3]` |
-| LFM2.5-Audio-1.5B | 2048 | 2048 | 3 | `[1, 2048, 3]` |
+All three LFM2.5 models share the **same LFM2-1.2B backbone** (`hidden_size=2048`, `conv_L_cache=3`). The larger parameter counts come from modality-specific encoders:
+- **Text 1.2B** — LFM2-1.2B backbone only
+- **VL 1.6B** — SigLIP2 vision encoder (`hidden_size=1152`, 27 layers) → projector (`hidden_size=2048`) → LFM2-1.2B
+- **Audio 1.5B** — Conformer encoder (`d_model=512`, 17 layers) → LFM2-1.2B → Depthformer (`dim=1024`)
 
-The `vector(2048)` schema dimension is correct and consistent across all cortices. All three write into the same `node_embeddings_inf` space without projection.
+| Model | `hidden_size` | `conv_L_cache` | layer_types | `past_conv_*` tensors | `past_conv_*` shape each |
+|---|---|---|---|---|---|
+| LFM2.5-1.2B-Thinking | 2048 | 3 | 10 conv + 6 attn | **10** | `[1, 2048, 3]` |
+| LFM2.5-VL-1.6B | 2048 | 3 | 10 conv + 6 attn | **10** | `[1, 2048, 3]` |
+| LFM2.5-Audio-1.5B | 2048 | 3 | 10 conv + 6 attn | **10** | `[1, 2048, 3]` |
 
-**Audio cortex note:** The 1.5B audio model is a composite — Conformer encoder (`d_model=512`) + LFM2-1.2B backbone (`hidden_size=2048`) + Depthformer (`dim=1024`). The `past_conv_*` embedding state comes from the LFM backbone only. Additionally, the audio LFM has mixed layer types (10 conv + 6 full-attention), so only 10 `past_conv_*` tensors are produced per forward pass (not 16). The text/VL models likely differ in their conv/attention split — verify per model when implementing cortex adapters.
+The `layer_types` array is identical across all three models. All three cortices produce exactly **10 `past_conv_*` tensors** per forward pass and write into the same `node_embeddings_inf` space without projection. `vector(2048)` is correct.
 
 **Browser WebGPU constraint:** Q8 decoder is not supported on WebGPU. Browser build uses `embed_*_fp16.onnx` + `decoder_q4.onnx`. Server build may use FP16 or FP16+Q4.
 

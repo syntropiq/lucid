@@ -150,11 +150,11 @@ See `docs/26-implementation-plan.md` for full rationale and stack breakdown.
 - First code artifact is `schema/001_lucid_core.sql` — write it to be valid PGlite + pgvector SQL, no NeuronDB-specific syntax
 - ChromaDB is a temporary stand-in only for the dream cycle batch analytics path; the core loop does not touch it
 - The ONNX model for inference-space embeddings uses `past_conv_*` tensors (shape `[1, 2048, 3]`), NOT standard last-hidden-state and NOT growing KV cache
-- **`vector(2048)` is confirmed correct** across all three cortices (verified from config.json and safetensors):
-  - Text 1.2B: `hidden_size=2048`, `conv_L_cache=3` → `past_conv_*` = `[1, 2048, 3]`
-  - VL 1.6B: `hidden_size=2048`, `conv_L_cache=3` → `past_conv_*` = `[1, 2048, 3]`
-  - Audio 1.5B: `lfm.hidden_size=2048`, `conv_L_cache=3` → `past_conv_*` = `[1, 2048, 3]`; ONNX model card's `1536` was a typo
-- Audio 1.5B is composite: Conformer encoder (`d_model=512`) + LFM2-1.2B backbone + Depthformer (`dim=1024`); only the LFM backbone produces `past_conv_*`; mixed layer types (10 conv + 6 attention) → 10 `past_conv_*` tensors per pass
+- **`vector(2048)` is confirmed correct** — all three LFM2.5 models share the same LFM2-1.2B backbone (`hidden_size=2048`, `conv_L_cache=3`); the "1.5B" and "1.6B" parameter counts come from modality encoders only
+- **All three models have identical `layer_types`**: 10 conv + 6 full_attention → exactly **10 `past_conv_*` tensors** per forward pass, each `[1, 2048, 3]`
+  - Text 1.2B: LFM2-1.2B only
+  - VL 1.6B: SigLIP2 encoder (`hidden_size=1152`) → projector (→ 2048) → LFM2-1.2B
+  - Audio 1.5B: Conformer encoder (`d_model=512`) → LFM2-1.2B → Depthformer (`dim=1024`)
 - VL ONNX splits into three sessions: `embed_tokens`, `embed_images`, `decoder` — the decoder is shared across cortexes
 - WebGPU requires Q4 decoder weights, not Q8 — browser build uses `decoder_q4.onnx` + `embed_*_fp16.onnx`
-- Audio cortex: `LiquidAI/LFM2.5-Audio-1.5B-ONNX` on HuggingFace; verify conv/attention layer split for text and VL models when implementing cortex adapters
+- Audio cortex: `LiquidAI/LFM2.5-Audio-1.5B-ONNX` on HuggingFace
