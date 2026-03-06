@@ -17,7 +17,32 @@ The runtime split is:
 - **PostgreSQL + NeuronDB** — is not a store she reads from. It *is* the state. The loops run inside it.
 - **OpenAI-compatible API** — the seam between Lucy and any operator. She does not care what is on the other side.
 
-### 26.2 Two-Project Build Strategy
+### 26.2 The Cortex Model
+
+LFM 2.5 is a multimodal family sharing a common CfC backbone: the same recurrent hidden state architecture underlies the text, vision-language, and audio variants. This has a direct architectural consequence: inference-space embeddings (`vector(2048)` past conv tensors) are modality-agnostic. The schema does not change when a new modality is introduced. Only the cortex that produces the embedding changes.
+
+We formalise this as the **cortex abstraction**: a swappable ONNX-backed module that accepts a specific input modality and emits a past-conv-tensor embedding into the shared inference space.
+
+| Cortex | Modality | Model | Sense analogy |
+|--------|----------|-------|---------------|
+| **Tactile** | Text / tokens | LFM 2.5 (text, 1.2B) | Mechanoreception — language felt as discrete texture |
+| **Visual** | Image / video frames | LFM 2.5-VL (1.6B) | Vision |
+| **Audio** | Speech / sound | LFM 2.5 audio backbone | Audition |
+| **Reasoning** | Integration / judgment | Cloud LLM (e.g. Claude) | Prefrontal — above the sensory layer |
+
+The tactile framing is not cosmetic. For a language model, tokens are discrete, textured, felt one at a time — closer to mechanoreception than to vision or hearing, which are continuous fields. This is also why the browser prototype is called "Lucy's Fingers": it is primarily a tactile and visual interface to the world, reaching out and touching the internet.
+
+**Cortex contract:** each cortex exposes a single async function:
+
+```typescript
+cortex.embed(input: CortexInput): Promise<Float32Array> // length 2048
+```
+
+The caller is always the continuous loop. The schema never sees the modality — only the resulting `vector(2048)` landing in `lucid.node_embeddings_inf`.
+
+**`lucid.content` requires one addition:** a `modality` column (`text | image | audio | av`) so that content nodes are routable to the correct cortex for re-embedding if needed. Everything else in the schema is unchanged.
+
+### 26.3 Two-Project Build Strategy
 
 Rather than building the full NeuronDB deployment from cold, we build two projects in parallel:
 
@@ -31,7 +56,7 @@ The key property of this split: **the schema is written once**. Project 1 runs i
 
 ---
 
-### 26.3 Project 1 — Browser Prototype
+### 26.4 Project 1 — Browser Prototype
 
 **Purpose:** Human UI, browser-based infotactic navigation, continuous loop proof of concept, permanent internet-facing "fingers."
 
@@ -52,7 +77,7 @@ The key property of this split: **the schema is written once**. Project 1 runs i
 
 ---
 
-### 26.4 Project 2 — Full Deployment
+### 26.5 Project 2 — Full Deployment
 
 **Purpose:** Persistent home state, OpenAI-compatible operator interface, full NeuronDB capability.
 
@@ -67,7 +92,7 @@ The key property of this split: **the schema is written once**. Project 1 runs i
 
 ---
 
-### 26.5 Shared Schema First
+### 26.6 Shared Schema First
 
 The `lucid` schema is the single most load-bearing artifact in the system. It is written once, targeting PGlite + pgvector compatibility, and runs identically in both projects. All other components are schema drivers.
 
@@ -89,7 +114,7 @@ Core schema objects:
 
 Triggers auto-create `PREV`/`NEXT`/`CONTAINS` structural edges on insert (per §6.2).
 
-### 26.6 Build Sequence
+### 26.7 Build Sequence
 
 1. **Shared schema** — `lucid.*` migration, PGlite + pgvector compatible
 2. **PL/pgSQL tour engine** — dual HNSW nearest-neighbour tour, Hebbian-Belief cost function

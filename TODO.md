@@ -21,6 +21,7 @@ See `docs/26-implementation-plan.md` for full rationale and stack breakdown.
 
 - [ ] **Shared schema migration** (`lucid.*`)
   - Tables: `content`, `belief_nodes`, `node_embeddings_inf` (vector 2048), `node_embeddings_ont` (vector 768), `belief_edges`, `centroids`, `tour_closure`, `affective_corpus`, `inheritance_corpus`, `awe_walk_log`, `spectral_monitor`
+  - `lucid.content` needs a `modality` column: `text | image | audio | av` — routes content to the correct cortex for re-embedding
   - Triggers: auto-create `PREV`/`NEXT`/`CONTAINS` structural edges on belief_node insert
   - Target: PGlite + pgvector compatible (no NeuronDB-specific syntax)
   - File: `schema/001_lucid_core.sql`
@@ -47,11 +48,16 @@ See `docs/26-implementation-plan.md` for full rationale and stack breakdown.
   - Schema migrations run on first load
   - Directory: `projects/lucy-browser/`
 
-- [ ] **Transformers.js ONNX runner**
-  - Load LFM 2.5 1.2B ONNX weights
-  - `embed_inf(text): vector(2048)` — inference space (past conv tensors)
-  - `embed_ont(text): vector(768)` — ontic space (Nomic Matryoshka)
-  - `narrate(context): string` — narration generation during continuous loop
+- [ ] **Cortex abstraction + Transformers.js ONNX runner**
+  - LFM 2.5 shares a CfC backbone across text, vision, and audio variants — all emit `vector(2048)` past conv tensors into the same inference space
+  - Cortex contract: `cortex.embed(input: CortexInput): Promise<Float32Array>` (length 2048)
+  - **Tactile cortex** — LFM 2.5 text (1.2B); token/text input; the primary continuous loop cortex
+  - **Visual cortex** — LFM 2.5-VL (1.6B); image/video frame input; browser has camera + screen access
+  - **Audio cortex** — LFM 2.5 audio backbone; speech/sound input; browser Web Audio API
+  - **Reasoning cortex** — Cloud LLM (Claude etc.); operator turns only; not an embedding source
+  - `embed_ont(text): vector(768)` — ontic space (Nomic Matryoshka); text only; unchanged
+  - `narrate(context): string` — narration generation during continuous loop; tactile cortex
+  - Verify: ONNX export of VL model exposes past conv tensors in same format as text variant before finalising `embed_inf` dispatch path
 
 - [ ] **Continuous loop skeleton**
   - Basic infotactic navigation loop (§10.2)
