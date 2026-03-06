@@ -45,7 +45,7 @@ Each deployment is a private, isolated persona instance. Belief contamination, i
 
 ### 15.5 Embedding Models
 
-**Ontic model:** `nomic-embed-text-v1.5` (Matryoshka-trained, 64–768 dimensions). Used at 768 dimensions throughout.
+**Ontic model:** `nomic-embed-text-v1.5` and `nomic-embed-vision-v1.5` (Matryoshka-trained, 64–768 dimensions, shared embedding space). Used at 768 dimensions throughout. Text and narration content is embedded via `nomic-embed-text-v1.5`; image content is embedded via `nomic-embed-vision-v1.5`. Both models produce embeddings in the same 768-dimensional space, making cross-modal cosine similarity well-defined without projection. Audio content is embedded as transcribed text via the text model. The Matryoshka property means the first $k$ dimensions of any ontic embedding form a valid lower-resolution embedding for the same content — the hierarchy is preserved under truncation, which maps naturally to coarser ontological resolution at smaller $k$.
 
 **Inference model:** LFM 2.5-1.2B-Instruct via ONNX. 16 layers: 10 double-gated LIV convolution blocks and 6 GQA attention blocks. Past conv tensors extracted via ONNX Runtime C API named output mechanism at >200 tok/s on CPU. GQA hidden states are extracted via the same named output mechanism, providing the second stream for dual-stream spectral monitoring ([§11.3](#113-dual-stream-spectral-monitoring)). Both streams are available without additional inference passes.
 
