@@ -40,15 +40,19 @@ cortex.embed(input: CortexInput): Promise<Float32Array> // length = hiddenSize
 
 The caller is always the continuous loop. The schema never sees the modality — only the resulting `vector(hiddenSize)` landing in `lucid.node_embeddings_inf`.
 
-**ONNX session structure** (confirmed from VL model card):
+**ONNX session structure** — all three cortices share the same LFM2-1.2B backbone. The official demo pattern loads one decoder session and swaps modality-specific input encoders around it:
 
 ```
-embed_tokens.onnx   — token embeddings        → tactile cortex input
-embed_images.onnx   — vision encoder          → visual cortex input
-decoder.onnx        — shared language decoder → all cortexes; produces past_conv_* state
+[always loaded]
+  decoder_q4.onnx + data   — shared LFM2-1.2B backbone; produces past_conv_* and hidden_states
+  embed_tokens.bin          — flat float32 lookup table; JS does the index lookup, no ONNX session
+
+[load on demand]
+  audio_encoder_q4.onnx    — Conformer audio encoder (audio cortex only)
+  embed_images_q4.onnx     — SigLIP2 vision encoder + projector (visual cortex only)
 ```
 
-The `past_conv_*` tensors output by the decoder (shape `[1, 2048, 3]`, fixed-size) are the inference-space embedding source. They represent the recurrent convolution state and do not grow with sequence length — making them well-suited as compact fixed-size belief node embeddings. The `past_key_values_*` tensors (growing attention KV cache) are not used for embedding.
+The `past_conv_*` tensors output by the decoder (shape `[1, 2048, 3]`, fixed-size per layer) are the inference-space embedding source. They represent the recurrent convolution state and do not grow with sequence length — making them well-suited as compact fixed-size belief node embeddings. The `past_key_values_*` tensors (growing attention KV cache, shape `[1, 8, seq_len, 64]`) are not used for embedding.
 
 **Confirmed model parameters (all three cortices, from config.json):**
 
@@ -65,17 +69,23 @@ All three LFM2.5 models share the **same LFM2-1.2B backbone** (`hidden_size=2048
 
 The `layer_types` array is identical across all three models. All three cortices produce exactly **10 `past_conv_*` tensors** per forward pass and write into the same `node_embeddings_inf` space without projection. `vector(2048)` is correct.
 
-**ONNX file variants** (from `transformers.js_config` in text model; VL/audio have per-session equivalents):
+**ONNX file sizes** (measured from `LiquidAI/LFM2.5-Audio-1.5B-ONNX`, decoder sizes will be the same across all three cortices as they share the backbone):
 
-| File | External shards | KV cache dtype | Use |
-|---|---|---|---|
-| `model.onnx` | 3 | float32 | reference only |
-| `model_fp16.onnx` | 2 | float16 | server |
-| `model_quantized.onnx` | 1 | float32 | — |
-| `model_q4.onnx` | 1 | float32 | browser fallback |
-| `model_q4f16.onnx` | 1 | float16 | **browser (WebGPU)** |
+| File | Size | Use |
+|---|---|---|
+| `decoder_q4.onnx` + `_data` | **1.22 GB** | browser — always loaded |
+| `decoder_fp16.onnx` + data files | **~2.35 GB** | server |
+| `embed_tokens.bin` | **537 MB** | always loaded (float32 — optimization target) |
+| `audio_encoder_q4.onnx` + `_data` | **~140 MB** | audio cortex, on demand |
+| `audio_embedding_q4.onnx` + data | **~134 MB** | audio generation only — **not needed for embedding** |
+| `vocoder_depthformer_q4.onnx` + data | **~187 MB** | audio generation only — **not needed for embedding** |
+| `audio_detokenizer_q4.onnx` + data | **~57 MB** | audio generation only — **not needed for embedding** |
 
-`kv_cache_dtype` applies only to `past_key_values_*` (attention cache) — irrelevant to us. `past_conv_*` tensors are always the model's native dtype (bfloat16 → float16 in ONNX). **Browser WebGPU build uses `model_q4f16.onnx` (1 shard, float16 KV cache). Server build uses `model_fp16.onnx` (2 shards).**
+**Browser memory baseline: ~1.76 GB** (`decoder_q4` + `embed_tokens.bin`). Desktop Chrome — workable. Mobile — very tight.
+
+**`embed_tokens.bin` is the main optimization target.** At float32 it costs 537 MB; a float16 version would cost ~268 MB with no meaningful quality loss for a lookup table. The `embed_tokens.json` metadata file specifies the dtype — worth checking whether transformers.js will accept a float16 binary, or whether we load and cast manually.
+
+**`kv_cache_dtype`** in `transformers.js_config` applies only to `past_key_values_*` (attention cache) — irrelevant to us. `past_conv_*` tensors are always the model's native dtype (bfloat16, stored as float32 in the ONNX runtime buffers per the demo).
 
 **`lucid.content` requires one addition:** a `modality` column (`text | image | audio | av`) so that content nodes are routable to the correct cortex for re-embedding if needed. Everything else in the schema is unchanged.
 
