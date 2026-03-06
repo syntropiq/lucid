@@ -19,8 +19,15 @@ See `docs/26-implementation-plan.md` for full rationale and stack breakdown.
 
 ## Phase 0 — Foundation (no external deps)
 
+- [ ] **Resolve inference embedding dimension before writing schema**
+  - VL model (1.6B): `hiddenSize=1536`, `past_conv_*` shape `[1, 1536, 3]` — NOT 2048
+  - Text model (1.2B): hidden size unknown until model card checked — see `LiquidAI/LFM2.5-1.2B-Instruct` or `LFM2.5-1.2B-Thinking-ONNX` on HuggingFace
+  - Design docs assume `vector(2048)` — confirm or update before finalising schema
+  - The embedding dimension for `node_embeddings_inf` must match the actual `hiddenSize` of the primary (tactile) cortex model
+  - The `past_conv_*` state is fixed-size and does not grow with sequence length — ideal for embedding
+
 - [ ] **Shared schema migration** (`lucid.*`)
-  - Tables: `content`, `belief_nodes`, `node_embeddings_inf` (vector 2048), `node_embeddings_ont` (vector 768), `belief_edges`, `centroids`, `tour_closure`, `affective_corpus`, `inheritance_corpus`, `awe_walk_log`, `spectral_monitor`
+  - Tables: `content`, `belief_nodes`, `node_embeddings_inf` (vector N — dimension TBD from above), `node_embeddings_ont` (vector 768), `belief_edges`, `centroids`, `tour_closure`, `affective_corpus`, `inheritance_corpus`, `awe_walk_log`, `spectral_monitor`
   - `lucid.content` needs a `modality` column: `text | image | audio | av` — routes content to the correct cortex for re-embedding
   - Triggers: auto-create `PREV`/`NEXT`/`CONTAINS` structural edges on belief_node insert
   - Target: PGlite + pgvector compatible (no NeuronDB-specific syntax)
@@ -49,15 +56,21 @@ See `docs/26-implementation-plan.md` for full rationale and stack breakdown.
   - Directory: `projects/lucy-browser/`
 
 - [ ] **Cortex abstraction + Transformers.js ONNX runner**
-  - LFM 2.5 shares a CfC backbone across text, vision, and audio variants — all emit `vector(2048)` past conv tensors into the same inference space
-  - Cortex contract: `cortex.embed(input: CortexInput): Promise<Float32Array>` (length 2048)
-  - **Tactile cortex** — LFM 2.5 text (1.2B); token/text input; the primary continuous loop cortex
-  - **Visual cortex** — LFM 2.5-VL (1.6B); image/video frame input; browser has camera + screen access
-  - **Audio cortex** — LFM 2.5 audio backbone; speech/sound input; browser Web Audio API
+  - LFM 2.5 shares a CfC backbone across text, vision, and audio variants — all emit past_conv tensors into the same inference space
+  - Cortex contract: `cortex.embed(input: CortexInput): Promise<Float32Array>` (length = hiddenSize, TBD)
+  - **ONNX session structure** (confirmed from VL model card):
+    - `embed_tokens.onnx` — token embeddings; used by tactile cortex
+    - `embed_images.onnx` — vision encoder; used by visual cortex
+    - `decoder.onnx` — shared by all cortexes; produces `present_conv_*` and `present_key_values_*`
+  - **`past_conv_*`** tensors: shape `[1, hiddenSize, 3]`, fixed-size, do not grow — these are the inference embedding source
+  - **`past_key_values_*`** tensors: shape `[1, numKVHeads, seq, headDim]`, grows with sequence — attention KV cache, not the embedding
+  - **Tactile cortex** — LFM 2.5 text (1.2B); `embed_tokens → decoder`; primary continuous loop cortex
+  - **Visual cortex** — LFM 2.5-VL (1.6B); `embed_images → decoder`; browser camera + screen; `hiddenSize=1536`, `numKVHeads=12`, `headDim=128`
+  - **Audio cortex** — LFM 2.5-Audio (1.5B); confirmed ONNX export exists (`LiquidAI/LFM2.5-Audio-1.5B-ONNX`); Web Audio API
   - **Reasoning cortex** — Cloud LLM (Claude etc.); operator turns only; not an embedding source
+  - **WebGPU constraint**: FP16 encoder + Q4 decoder only — Q8 decoder not supported on WebGPU; use Q4 weights in browser build
   - `embed_ont(text): vector(768)` — ontic space (Nomic Matryoshka); text only; unchanged
-  - `narrate(context): string` — narration generation during continuous loop; tactile cortex
-  - Verify: ONNX export of VL model exposes past conv tensors in same format as text variant before finalising `embed_inf` dispatch path
+  - `narrate(context): string` — narration generation; tactile cortex decoder
 
 - [ ] **Continuous loop skeleton**
   - Basic infotactic navigation loop (§10.2)
@@ -143,4 +156,8 @@ See `docs/26-implementation-plan.md` for full rationale and stack breakdown.
 - Start reading from `docs/26-implementation-plan.md` then `docs/06-the-graph-database.md` (schema source of truth) and `docs/23-tour-engine-architecture.md` (tour engine source of truth)
 - First code artifact is `schema/001_lucid_core.sql` — write it to be valid PGlite + pgvector SQL, no NeuronDB-specific syntax
 - ChromaDB is a temporary stand-in only for the dream cycle batch analytics path; the core loop does not touch it
-- The ONNX model for inference-space embeddings uses past conv tensors (2048-dim), not standard last-hidden-state — check §24 and §15 for model specifics before implementing embed_inf
+- The ONNX model for inference-space embeddings uses `past_conv_*` tensors (shape `[1, hiddenSize, 3]`), NOT standard last-hidden-state and NOT growing KV cache
+- **`vector(2048)` in the design docs is unverified** — VL model has `hiddenSize=1536`; text 1.2B model must be checked before schema is written
+- VL ONNX splits into three sessions: `embed_tokens`, `embed_images`, `decoder` — the decoder is shared across cortexes
+- WebGPU requires Q4 decoder weights, not Q8 — browser build uses `decoder_q4.onnx` + `embed_*_fp16.onnx`
+- Audio cortex confirmed: `LiquidAI/LFM2.5-Audio-1.5B-ONNX` on HuggingFace

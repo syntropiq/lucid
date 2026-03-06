@@ -35,10 +35,24 @@ The tactile framing is not cosmetic. For a language model, tokens are discrete, 
 **Cortex contract:** each cortex exposes a single async function:
 
 ```typescript
-cortex.embed(input: CortexInput): Promise<Float32Array> // length 2048
+cortex.embed(input: CortexInput): Promise<Float32Array> // length = hiddenSize
 ```
 
-The caller is always the continuous loop. The schema never sees the modality — only the resulting `vector(2048)` landing in `lucid.node_embeddings_inf`.
+The caller is always the continuous loop. The schema never sees the modality — only the resulting `vector(hiddenSize)` landing in `lucid.node_embeddings_inf`.
+
+**ONNX session structure** (confirmed from VL model card):
+
+```
+embed_tokens.onnx   — token embeddings        → tactile cortex input
+embed_images.onnx   — vision encoder          → visual cortex input
+decoder.onnx        — shared language decoder → all cortexes; produces past_conv_* state
+```
+
+The `past_conv_*` tensors output by the decoder (shape `[1, hiddenSize, 3]`, fixed-size) are the inference-space embedding source. They represent the recurrent convolution state and do not grow with sequence length — making them well-suited as compact fixed-size belief node embeddings. The `past_key_values_*` tensors (growing attention KV cache) are not used for embedding.
+
+**Confirmed model parameters (VL 1.6B):** `hiddenSize=1536`, `numKVHeads=12`, `headDim=128`. The text 1.2B model's `hiddenSize` must be verified before the schema dimension is finalised — the design docs assume 2048, which does not match the VL model. All cortex models must share the same `hiddenSize` for the inference embedding space to be coherent, or the schema must accommodate a declared dimension per cortex.
+
+**Browser WebGPU constraint:** Q8 decoder is not supported on WebGPU. Browser build uses `embed_*_fp16.onnx` + `decoder_q4.onnx`. Server build may use FP16 or FP16+Q4.
 
 **`lucid.content` requires one addition:** a `modality` column (`text | image | audio | av`) so that content nodes are routable to the correct cortex for re-embedding if needed. Everything else in the schema is unchanged.
 
