@@ -65,7 +65,17 @@ All three LFM2.5 models share the **same LFM2-1.2B backbone** (`hidden_size=2048
 
 The `layer_types` array is identical across all three models. All three cortices produce exactly **10 `past_conv_*` tensors** per forward pass and write into the same `node_embeddings_inf` space without projection. `vector(2048)` is correct.
 
-**Browser WebGPU constraint:** Q8 decoder is not supported on WebGPU. Browser build uses `embed_*_fp16.onnx` + `decoder_q4.onnx`. Server build may use FP16 or FP16+Q4.
+**ONNX file variants** (from `transformers.js_config` in text model; VL/audio have per-session equivalents):
+
+| File | External shards | KV cache dtype | Use |
+|---|---|---|---|
+| `model.onnx` | 3 | float32 | reference only |
+| `model_fp16.onnx` | 2 | float16 | server |
+| `model_quantized.onnx` | 1 | float32 | — |
+| `model_q4.onnx` | 1 | float32 | browser fallback |
+| `model_q4f16.onnx` | 1 | float16 | **browser (WebGPU)** |
+
+`kv_cache_dtype` applies only to `past_key_values_*` (attention cache) — irrelevant to us. `past_conv_*` tensors are always the model's native dtype (bfloat16 → float16 in ONNX). **Browser WebGPU build uses `model_q4f16.onnx` (1 shard, float16 KV cache). Server build uses `model_fp16.onnx` (2 shards).**
 
 **`lucid.content` requires one addition:** a `modality` column (`text | image | audio | av`) so that content nodes are routable to the correct cortex for re-embedding if needed. Everything else in the schema is unchanged.
 
