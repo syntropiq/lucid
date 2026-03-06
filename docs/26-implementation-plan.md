@@ -48,9 +48,9 @@ embed_images.onnx   — vision encoder          → visual cortex input
 decoder.onnx        — shared language decoder → all cortexes; produces past_conv_* state
 ```
 
-The `past_conv_*` tensors output by the decoder (shape `[1, hiddenSize, 3]`, fixed-size) are the inference-space embedding source. They represent the recurrent convolution state and do not grow with sequence length — making them well-suited as compact fixed-size belief node embeddings. The `past_key_values_*` tensors (growing attention KV cache) are not used for embedding.
+The `past_conv_*` tensors output by the decoder (shape `[1, 2048, 3]`, fixed-size) are the inference-space embedding source. They represent the recurrent convolution state and do not grow with sequence length — making them well-suited as compact fixed-size belief node embeddings. The `past_key_values_*` tensors (growing attention KV cache) are not used for embedding.
 
-**Confirmed model parameters (VL 1.6B):** `hiddenSize=1536`, `numKVHeads=12`, `headDim=128`. The text 1.2B model's `hiddenSize` must be verified before the schema dimension is finalised — the design docs assume 2048, which does not match the VL model. All cortex models must share the same `hiddenSize` for the inference embedding space to be coherent, or the schema must accommodate a declared dimension per cortex.
+**Confirmed model parameters:** `hiddenSize=2048` for both text 1.2B and VL 1.6B (verified from safetensors: `embedding_norm.weight [2048]`, `conv.conv.weight [2048, 1, 3]`). The ONNX model card's `1536` figure was a typo. The `vector(2048)` schema dimension is correct. Both cortex models write into the same `node_embeddings_inf` space without projection.
 
 **Browser WebGPU constraint:** Q8 decoder is not supported on WebGPU. Browser build uses `embed_*_fp16.onnx` + `decoder_q4.onnx`. Server build may use FP16 or FP16+Q4.
 
