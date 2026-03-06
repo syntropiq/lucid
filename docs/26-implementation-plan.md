@@ -147,19 +147,17 @@ Core schema objects:
 
 | Table | Purpose |
 |-------|---------|
-| `lucid.content` | Raw content storage referenced by nodes |
-| `lucid.belief_nodes` | Belief primitive: embeddings, provenance, affective fields, ingress/egress chains |
+| `lucid.content` | Raw content storage (text, image, audio, av) referenced by belief nodes; `modality` column drives cortex routing |
+| `lucid.belief_nodes` | All node types in a single table, discriminated by `node_type` (`page` \| `book` \| `narration` \| `tagged` \| `stinky_cheese`). Page nodes carry `book_id` and `sequence_position`; book nodes are the parent record. On-insert trigger auto-creates `PREV`/`NEXT` edges between consecutive pages within a book and `CONTAINS` edges from book to page (§6.2). Pages are sliced to $L_\text{page} \approx 4096$ tokens; a document shorter than this is a single page. |
 | `lucid.node_embeddings_inf` | `vector(2048)` — inference space (LFM past conv tensors) |
 | `lucid.node_embeddings_ont` | `vector(768)` — ontic space (Nomic Matryoshka pair: text + vision, shared space) |
-| `lucid.belief_edges` | All edge types with Hebbian statistics |
+| `lucid.belief_edges` | All edge types (`PREV`, `NEXT`, `CONTAINS`, `similar_inf`, `similar_ont`, `SUPPORTS`, `REFUTES`) with Hebbian statistics |
 | `lucid.centroids` | Named centroid rows: $C_i$, $C_o$, $C_s$, $C_w$, $C_0$ |
 | `lucid.tour_closure` | Per-tour diagnostic outcomes |
 | `lucid.affective_corpus` | Prose affective entries per narration node |
 | `lucid.inheritance_corpus` | Judgment records (Self Library substrate) |
 | `lucid.awe_walk_log` | Associative candidates from infotactic walks |
 | `lucid.spectral_monitor` | Outer/inner FFT health scores |
-
-Triggers auto-create `PREV`/`NEXT`/`CONTAINS` structural edges on insert (per §6.2).
 
 ### 26.7 Build Sequence
 
