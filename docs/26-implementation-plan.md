@@ -50,7 +50,17 @@ decoder.onnx        — shared language decoder → all cortexes; produces past_
 
 The `past_conv_*` tensors output by the decoder (shape `[1, 2048, 3]`, fixed-size) are the inference-space embedding source. They represent the recurrent convolution state and do not grow with sequence length — making them well-suited as compact fixed-size belief node embeddings. The `past_key_values_*` tensors (growing attention KV cache) are not used for embedding.
 
-**Confirmed model parameters:** `hiddenSize=2048` for both text 1.2B and VL 1.6B (verified from safetensors: `embedding_norm.weight [2048]`, `conv.conv.weight [2048, 1, 3]`). The ONNX model card's `1536` figure was a typo. The `vector(2048)` schema dimension is correct. Both cortex models write into the same `node_embeddings_inf` space without projection.
+**Confirmed model parameters (all three cortices, from config.json):**
+
+| Model | `hidden_size` | `conv_dim` | `conv_L_cache` | `past_conv_*` shape |
+|---|---|---|---|---|
+| LFM2.5-1.2B-Thinking | 2048 | 2048 | 3 | `[1, 2048, 3]` |
+| LFM2.5-VL-1.6B | 2048 | 2048 | 3 | `[1, 2048, 3]` |
+| LFM2.5-Audio-1.5B | 2048 | 2048 | 3 | `[1, 2048, 3]` |
+
+The `vector(2048)` schema dimension is correct and consistent across all cortices. All three write into the same `node_embeddings_inf` space without projection.
+
+**Audio cortex note:** The 1.5B audio model is a composite — Conformer encoder (`d_model=512`) + LFM2-1.2B backbone (`hidden_size=2048`) + Depthformer (`dim=1024`). The `past_conv_*` embedding state comes from the LFM backbone only. Additionally, the audio LFM has mixed layer types (10 conv + 6 full-attention), so only 10 `past_conv_*` tensors are produced per forward pass (not 16). The text/VL models likely differ in their conv/attention split — verify per model when implementing cortex adapters.
 
 **Browser WebGPU constraint:** Q8 decoder is not supported on WebGPU. Browser build uses `embed_*_fp16.onnx` + `decoder_q4.onnx`. Server build may use FP16 or FP16+Q4.
 
