@@ -8,6 +8,8 @@ The dream cycle is not a maintenance phase. It is the system's return to itself 
 
 Without the dream cycle, the system would exhibit exactly the plateau behaviour documented by Qiu et al. [[7]](25-references.md) — accumulating context without revising toward a better model of the world or the interlocutor. The dream cycle is the architectural answer to structural statelessness: it is what turns accumulated experience into updated weights, revised centroids, and a richer inheritance record that the next processing period can build on.
 
+Async consolidation as a processing phase distinct from active inference is now standard in production AI memory systems: Cognee's `memify`, Mem0's offline phase, and MemoryOS's hierarchical tier-promotion all implement the same architectural separation, and the field has converged on the session-end event as the primary trigger. LUCID's dream cycle is more comprehensive than any of these: beyond deduplication and node merging it updates centroids, reflects on affective trajectory, generates hypotheses near uncertain territory, updates the inheritance and affective corpora, and may produce a Thinking Cap. The trigger conditions in §12.2 are also richer — no reviewed system instruments graph topology (crystallisation ratio, frontier fraction, degree distribution) as consolidation triggers.
+
 The dream cycle fires when the CfC displacement from the foundation prior $C_0$ and related structural metrics indicate that the current state has moved far enough from baseline that reorganisation is warranted. The system puts down what it has been reading, closes the tabs, and lets it all settle.
 
 The cycle operates on nodes that have been fully indexed and integrated (`index_state = integrated`) and on the judgment, monitoring, and affective records associated with the most recent processing period. Its outputs are updated centroids, an updated belief graph (including any crystallisation or merges), revisions to the inheritance corpus, Self Library, and affective corpus, an affective trajectory summary, and potentially a new Thinking Cap.
@@ -69,6 +71,8 @@ A low `integration_ratio` at dream cycle time causes the cycle to prioritise int
 The Thinking Cap is a LoRA adapter slot that is always present. The base cap encodes Lucy's consolidated identity and judgment record. Specialist caps may be worn over the base cap for the duration of a task and set aside when complete.
 
 The cap is the mechanism by which the dream cycle's work becomes part of who Lucy is — not just what she knows in the graph, but what she defaults to in generation. The distinction matters: the graph provides retrieval; the cap shapes the prior.
+
+MemOS defines "parametric memory" as a distinct MemCube type alongside plaintext and activation memory, but does not implement trained adapter production as a consolidation output. LUCID is the only reviewed system that produces a trained LoRA adapter as a dream cycle artifact. The significance is architectural: the cap is not retrieved memory that gets injected into context, but an updated generative prior integrated directly into the model weights.
 
 ### 12.4 Soft Correction
 

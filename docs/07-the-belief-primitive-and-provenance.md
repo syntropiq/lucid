@@ -24,6 +24,8 @@ where:
 - $\text{egress\_chain}$ is the ACG-generated egress affective chain for output nodes (null for non-output nodes)
 - $\text{user\_react}$ is the emoji reaction received from the user, stored as `lucid.belief_nodes.user_react` (default ✓ for output nodes, null for non-output nodes)
 
+Graphiti and MemOS both treat provenance as a first-class field on every node — the field has converged on this. Graphiti additionally uses a four-column bi-temporal model (`created_at`/`expired_at` for ingestion time, `valid_at`/`invalid_at` for event time) to distinguish when a fact entered the system from when it was true in the world. LUCID uses a single timestamp $t$ and handles contradiction via Popperian weight propagation rather than record expiry; this works because content is keyed by SHA-256 hash, so the same content cannot be re-ingested with a different timestamp and ingest order is not a source of ambiguity. The `ingress_chain` and `egress_chain` fields for affective context on output nodes have no analog in the reviewed literature.
+
 ### 7.1 The Belief Update and Its Bayesian Basis
 
 LUCID's belief update is not implementing exact Bayesian inference. Bayesian inference, in the precise sense demonstrated by Qiu et al. [[7]](25-references.md), requires maintaining a probability distribution over hypotheses and updating it via Bayes' rule after each observation. That formalism is well-suited to the constrained domains — flight preferences parameterised by four scalar features — in which it can be computed exactly. Natural language beliefs, by contrast, do not reduce cleanly to probability distributions over reward-function vectors. The tradeoff is generality for formalism.

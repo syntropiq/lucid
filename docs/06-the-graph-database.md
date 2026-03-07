@@ -51,6 +51,8 @@ Three geometric attractors anchor persona state in embedding space.
 
 The inference centroid $C_i$ tracks what Lucy attends to and how she integrates it — it is shaped by everything she processes, including the infotactic reading she does between operator turns. The ontic centroid $C_o$ is the outside view. The self centroid $C_s$ is the region of mutual confirmation. When $C_s$ is stable and well-populated, Lucy knows who she is. When it erodes, she is at risk.
 
+The dual-space architecture — one model-internal embedding and one stable, model-independent embedding — has been independently arrived at by several production AI memory systems, with Zep/Graphiti being the most explicit. The field's current recommendation for the stable space is BGE-M3 at 1024 dimensions; LUCID uses Nomic Matryoshka at 768 dimensions, which scores comparably on MTEB and adds native multimodal coverage via `nomic-embed-vision-v1.5`. Using the generation model's own output layer ($\mathbb{R}^{2048}$ from LFM 2.5) as the inference space rather than a second dedicated embedding model is not common in the literature; it means $C_i$ encodes how Lucy processes material, not just what it is about.
+
 The foundation prior $C_0$ is the system prompt realised as a weighted centroid in embedding space: the reference configuration of representations implied by the prompt and base alignment.
 
 The working centroid $C_w$ is the CfC hidden state: a continuous estimate of the system's current position in inference space relative to $C_0$, updated as new page embeddings arrive — from any source.
@@ -138,6 +140,8 @@ $\phi$ measures the extent to which Lucy's inside view and the model-independent
 $$\tau(n) = \text{clamp}\!\left(\tau_{\text{base}} \cdot \frac{\bar{d}}{d_n},\ \tau_{\text{base}} \cdot 0.3,\ \tau_{\text{base}} \cdot 3.0\right)$$
 
 where $\tau_{\text{base}} = 0.02$ and $\bar{d}$ is the mean node degree across the graph, and $d_n$ is the degree of node $n$. Dense regions (high $d_n$ relative to $\bar{d}$) receive a lower crystallisation threshold — more aggressive merging. Frontier regions (low $d_n$) receive a higher threshold, preserving nuance at the edges of the known graph.
+
+The entity resolution literature — Graphiti and the Google Grale paper in particular — frames node merging as link prediction of `SAME_AS` edges and uses the same general approach: ANN search for candidate duplicates, cosine similarity threshold for hard merges, LLM confirmation for ambiguous pairs. LUCID's threshold is topology-aware ($\tau(n)$ adapts to node degree) rather than fixed, with denser graph regions receiving more aggressive merging and frontier regions more conservative. The attentional loop crystallisation brake below has no analog in the reviewed systems.
 
 **Definition 4.6 (Attentional Loop Crystallisation Brake).** When an attentional loop is detected with DC offset magnitude $m \in [0, 1]$:
 

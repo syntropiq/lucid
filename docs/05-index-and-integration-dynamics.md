@@ -50,6 +50,8 @@ When a node reaches `index_state = indexed`, it becomes eligible for integration
 
 Affinity edges are the structural substrate of the graph. They make it navigable before any explicit epistemic judgments have been attached. Their initial weight is cosine similarity. They are created during consolidation and updated by the Hebbian activation model as traversal accumulates.
 
+Graphiti's retrieval layer runs three parallel paths — vector similarity, BM25 full-text search, and BFS graph traversal — and merges them via reciprocal rank fusion (RRF). LUCID does not use RRF. The dual HNSW query (inference space and ontic space separately, steps 1–4 above) combined with the tour mechanism serves the same purpose differently: rather than merging ranked lists, LUCID identifies nodes that appear in both tours (the overlap set $\Omega$) as structurally privileged. The divergence between tour outcomes is itself a signal — it is not averaged away but preserved as the primary identity and threat metric.
+
 ### 5.5 Pre-Integration Screening
 
 Before affinity edges are committed, a fast screening step detects structurally anomalous nodes:

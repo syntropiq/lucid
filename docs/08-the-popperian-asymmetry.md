@@ -18,6 +18,8 @@ This asymmetry is not merely a design choice; it is empirically validated from a
 
 The Popperian asymmetry at the update-rule level and the Bayesian teaching finding at the training level are expressing the same underlying principle: imperfect evidence, appropriately weighted and revised, is a more powerful epistemic substrate than confident assertion. A belief system built on fast refutation and slow confirmation is doing in inference what Bayesian teaching does in training — prioritising the signal from genuine uncertainty over the noise of premature closure.
 
+BEWA (Belief-Weighted Epistemic Architecture, arXiv:2506.16015, 2025) arrived at a formally similar construction from the direction of citation analysis and academic knowledge graphs: asymmetric belief weighting, temporal decay, and epistemic counterweights that penalise beliefs for contradictions rather than deleting them. LUCID derived the same asymmetry from Popperian epistemology of science. The specific parameterisations differ; the structural insight is the same.
+
 ---
 
 [← §7 The Belief Primitive and Provenance](07-the-belief-primitive-and-provenance.md) | [Index](../README.md) | [§9 The Threat Architecture →](09-the-threat-architecture.md)
