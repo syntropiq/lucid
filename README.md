@@ -41,6 +41,7 @@ The full design document is decomposed into the following sections.
 | 24 | [NeuronDB Integration](docs/24-neurondb-integration.md) | Schema; vector types; ONNX embedding; past convolution tensors |
 | 25 | [References](docs/25-references.md) | Citations |
 | 26 | [Implementation Plan](docs/26-implementation-plan.md) | Two-project build strategy; browser prototype and full deployment; build sequence |
+| 27 | [SUE — Swappable Unit of Execution](docs/27-sue-spec.md) | Model driver contract; adapter interface; config + adapter code; LFM 2.5 noop case; projection for non-2048 models |
 
 ---
 
