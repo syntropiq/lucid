@@ -26,8 +26,21 @@ Phases are sequential. Items marked ⟂ can be parallelised within a phase. See 
   - [ ] `ReconciliationRecord`
 
 - [ ] Write `src/sue/contracts/vector-store.ts` — `VectorStore` interface ⟂
+  - [ ] `add(id, prefix, metadata)` — stores truncated prefix (128-dim browser, 256-dim device)
+  - [ ] `search(queryPrefix, k)` — coarse KNN on prefix
+  - [ ] `get(id)`, `delete(id)`
 - [ ] Write `src/sue/contracts/graph-store.ts` — `GraphStore` interface ⟂
+  - [ ] All node/edge/centroid/AWE/spectral/sync methods
+  - [ ] `embeddingOntPut(nodeId, full768)` + `embeddingOntGet(nodeId)` — full vectors for rerank
+  - [ ] `embeddingInfPut(nodeId, fullInf)` + `embeddingInfGet(nodeId)`
 - [ ] Write `src/sue/contracts/mesh.ts` — `Mesh` interface ⟂
+- [ ] Write `src/core/vector-utils.ts` ⟂
+  - [ ] `cosineSimilarity(a, b)`
+  - [ ] `binarize(vec, dims)` — float → Uint8Array packed bits
+  - [ ] `hammingScore(a, b)` — XOR + popcount, returns 0–1
+  - [ ] `popcount(x)` — bit count kernel
+- [ ] Write `src/core/search.ts` ⟂
+  - [ ] `twoPhaseSearch(queryFull, k, ont, graph, prefix)` — coarse KNN + precise rerank
 
 - [ ] Write `src/sue/substrate/entitydb-vector-store.ts` ⟂
   - [ ] `add(id, vector, metadata)` → EntityDB insert
@@ -89,8 +102,10 @@ Phases are sequential. Items marked ⟂ can be parallelised within a phase. See 
 
 - [ ] Write `src/workers/embed.worker.ts`
   - [ ] Boot SUE (ontic wrapper + EntityDB vector store + IndexedDB graph store)
-  - [ ] Poll GraphStore for unindexed nodes (BroadcastChannel trigger)
-  - [ ] `sue.ontic().embed(content)` → `sue.ont().add(id, embedding)`
+  - [ ] BroadcastChannel listener for unindexed nodes
+  - [ ] `full = await sue.ontic().embed(content)` → Float32Array(768)
+  - [ ] `await sue.ont().add(id, full.slice(0, PREFIX_DIM))` — prefix to VectorStore
+  - [ ] `await sue.graph().embeddingOntPut(id, full)` — full vector to GraphStore
   - [ ] `sue.graph().nodeUpsert({ ...node, index_state: 'indexed' })`
   - [ ] `sue.graph().syncLogAppend({ type: 'belief:node', ... })`
   - [ ] Broadcast `CENTROID_DIRTY`
