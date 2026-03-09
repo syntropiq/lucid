@@ -1,8 +1,8 @@
-[← §25 References](25-references.md) | [Index](../README.md)
+[← §26 References](26-references.md) | [Index](../README.md)
 
 ---
 
-## 26. Implementation Plan
+## 27. Implementation Plan
 
 ### 26.1 Architecture Clarification
 
@@ -174,4 +174,4 @@ Core schema objects:
 
 ---
 
-[← §25 References](25-references.md) | [Index](../README.md)
+[← §26 References](26-references.md) | [Index](../README.md)

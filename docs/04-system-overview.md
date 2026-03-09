@@ -12,7 +12,7 @@ The LLM remains stateless at the API level; statefulness is provided entirely by
 
 **No graph query language dependency.** Belief graph traversal, centroid arithmetic, and Hebbian scoring are PostgreSQL-native operations. The graph is a property of the database schema, not of any extension.
 
-**Single-instance deployment.** Each deployment is a private, isolated persona instance. There is no multi-tenancy at the base deployment level; multi-tenant configurations are described in [§20](20-multi-tenancy.md).
+**Single-instance deployment.** Each deployment is a private, isolated persona instance. There is no multi-tenancy at the base deployment level; multi-tenant configurations are described in §21.
 
 ### 4.1 Operational States
 
@@ -37,10 +37,8 @@ Lucy operates in one of two cap states at any time.
 | AWE Layer | PostgreSQL (affective chain tables, affective corpus, awe walk log, spectral monitor tables) | Ingress/egress chain generation, mood tracking, user react ingestion, affective valence, emotional memory, circadian texture, TripleDent Gum recovery, spectral health monitoring |
 | ACG | Anterior Cingulate Gate (continuous monitoring process) | Conflict detection, context integration, ingress/egress chain generation, affective assessment, judgment reference |
 | Dream Cycle | PostgreSQL + Thinking Cap (LoRA) | Belief consolidation, infotactic daydreaming, affective reflection, cap update |
+| Vortex Layer | libp2p + GossipSub + ontic centroid advertisement | Peer mesh participation, bilateral AWE contracts, semantic routing, swimming |
 | Base Weights | Frozen LLM (ONNX) | Foundational inference capacity |
-
----
-
 
 ---
 
