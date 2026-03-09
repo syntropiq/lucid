@@ -41,10 +41,6 @@ The full design document is decomposed into the following sections.
 | 24 | [Tour Engine Architecture](docs/24-tour-engine-architecture.md) | TSP heuristics; Hebbian tour weighting; tour cost metrics |
 | 25 | [NeuronDB Integration](docs/25-neurondb-integration.md) | Schema; vector types; ONNX embedding; past convolution tensors |
 | 26 | [References](docs/26-references.md) | Citations |
-| 27 | [Implementation Plan](docs/27-implementation-plan.md) | Two-project build strategy; browser prototype and full deployment; build sequence |
-
 ---
 
 The v3.1 monolithic design document is at [`LUCID_v3.1.md`](LUCID_v3.1.md).
-
-Active build plan and task tracking: [`TODO.md`](TODO.md).
