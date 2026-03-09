@@ -42,6 +42,7 @@ The full design document is decomposed into the following sections.
 | 25 | [NeuronDB Integration](docs/25-neurondb-integration.md) | Schema; vector types; ONNX embedding; past convolution tensors |
 | 26 | [References](docs/26-references.md) | Citations |
 | 27 | [Browser-Native Architecture (Lucid Lite)](docs/27-browser-native-architecture.md) | pglite + pgvector + transformers.js + libp2p-WebRTC; live queries as event system; ElectricSQL sync contract |
+| 28 | [The Synaptic Utility Engine (SUE)](docs/28-synaptic-utility-engine.md) | Model-agnostic wrapper layer; ontic and inference contracts; SpectralSample normalisation; version upgrade path |
 ---
 
 The v3.1 monolithic design document is at [`LUCID_v3.1.md`](LUCID_v3.1.md).
