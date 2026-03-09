@@ -39,11 +39,11 @@ The full design document is decomposed into the following sections.
 | 22 | [External Content Ingest](docs/22-shared-content-layer.md) | Content source model; provenance levels; what syncs vs what stays private |
 | 23 | [Verification Queue and Sampling](docs/23-verification-queue-and-sampling.md) | Human-in-the-loop verification; sampling strategy |
 | 24 | [Tour Engine Architecture](docs/24-tour-engine-architecture.md) | TSP heuristics; Hebbian tour weighting; tour cost metrics |
-| 25 | [SUE Substrate Boundaries](docs/25-neurondb-integration.md) | What LUCID delegates to substrates vs what it owns; worker responsibilities; device-scale analytics |
+| 25 | [USE Substrate Boundaries](docs/25-neurondb-integration.md) | What LUCID delegates to substrates vs what it owns; worker responsibilities; device-scale analytics |
 | 26 | [References](docs/26-references.md) | Citations |
 | 27 | [Browser-Native Instantiation](docs/27-browser-native-instantiation.md) | EntityDB + IndexedDB + GunDB; Worker architecture; AXE centroid routing; wide sync integration |
-| 28 | [The Synaptic Utility Engine (SUE)](docs/28-synaptic-utility-engine.md) | Model contracts (ontic/inference); substrate contracts (VectorStore/GraphStore/Mesh); browser and device implementations |
-| 29 | [Multiply Conscious](docs/29-multiply-conscious.md) | Three instantiation types; SEA identity; wide sync scope; self-dialogue reconciliation; DAM/AXE/SEA integration; Gateway Lucy anti-thrash |
+| 28 | [The User Specified Engine (USE)](docs/28-user-specified-engine.md) | Model contracts (ontic/inference); substrate contracts (VectorStore/GraphStore/Mesh); browser and device implementations |
+| 29 | [Multifocal](docs/29-multifocal.md) | Three instantiation types; SEA identity; wide sync scope; self-dialogue reconciliation; DAM/AXE/SEA integration; Gateway Lucy anti-thrash |
 ---
 
 The v3.1 monolithic design document is at [`LUCID_v3.1.md`](LUCID_v3.1.md). *(Note: the monolith reflects v3.1; the numbered docs above are the authoritative v3.5 design.)*

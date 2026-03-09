@@ -1,4 +1,4 @@
-[← §25 SUE Substrate Boundaries](25-neurondb-integration.md) | [Index](../README.md)
+[← §25 USE Substrate Boundaries](25-neurondb-integration.md) | [Index](../README.md)
 
 ---
 
@@ -30,4 +30,4 @@
 
 ---
 
-[← §25 SUE Substrate Boundaries](25-neurondb-integration.md) | [Index](../README.md)
+[← §25 USE Substrate Boundaries](25-neurondb-integration.md) | [Index](../README.md)

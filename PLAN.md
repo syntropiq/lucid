@@ -24,11 +24,11 @@ No PostgreSQL. No libp2p. No WASM database. The same LUCID feedback loop logic r
 
 ## The Core Bet
 
-**SUE is the seam.** All feedback loops call `sue.ont()`, `sue.inf()`, `sue.graph()`, `sue.mesh()`. They never import EntityDB, IndexedDB, Lancedb, or GunDB directly. Swapping the substrate means changing the constructor passed to `sue.registerSubstrate()` at boot. Nothing else changes.
+**USE is the seam.** All feedback loops call `use.ont()`, `use.inf()`, `use.graph()`, `use.mesh()`. They never import EntityDB, IndexedDB, Lancedb, or GunDB directly. Swapping the substrate means changing the constructor passed to `use.registerSubstrate()` at boot. Nothing else changes.
 
 ---
 
-## Phase 1 — SUE substrate layer
+## Phase 1 — USE substrate layer
 
 **Goal:** The three substrate interfaces (`VectorStore`, `GraphStore`, `Mesh`) implemented and tested against real backing stores. No feedback loops yet. Just the plumbing that everything else will call.
 
@@ -57,9 +57,9 @@ All four implementations tested against the same test suite via the interface. A
 
 ---
 
-## Phase 2 — Model wrappers + SUE registry (from §28)
+## Phase 2 — Model wrappers + USE registry (from §28)
 
-**Goal:** `sue.ontic().embed()` and `sue.inference().generate()` work. SUE registry activates wrappers. The model layer is done and never touched again for substrate reasons.
+**Goal:** `use.ontic().embed()` and `use.inference().generate()` work. USE registry activates wrappers. The model layer is done and never touched again for substrate reasons.
 
 ### Deliverables
 
@@ -69,20 +69,20 @@ All four implementations tested against the same test suite via the interface. A
 
 `src/sue/wrappers/inference/lfm-2.5.ts` — full dual-stream implementation
 
-`src/sue/registry.ts` — unified registry: model + substrate, `sue.ontic()`, `sue.inference()`, `sue.ont()`, `sue.inf()`, `sue.graph()`, `sue.mesh()`
+`src/sue/registry.ts` — unified registry: model + substrate, `use.ontic()`, `use.inference()`, `use.ont()`, `use.inf()`, `use.graph()`, `use.mesh()`
 
 ### Tests
 
-- `sue.ontic().embed('hello world')` returns a `Float32Array` of length 768
-- `sue.inference().generate(messages)` returns a string
-- `sue.inference().spectralSample()` returns a valid `SpectralSample`
+- `use.ontic().embed('hello world')` returns a `Float32Array` of length 768
+- `use.inference().generate(messages)` returns a string
+- `use.inference().spectralSample()` returns a valid `SpectralSample`
 - Swap substrate implementations mid-test, verify same results
 
 ---
 
 ## Phase 3 — Embed + Inference Workers
 
-**Goal:** Two Web Workers wired to the SUE substrate. Inserting a belief node produces an ontic embedding. Inserting a user turn produces an assistant response. The feedback loop exists, unverified by UI.
+**Goal:** Two Web Workers wired to the USE substrate. Inserting a belief node produces an ontic embedding. Inserting a user turn produces an assistant response. The feedback loop exists, unverified by UI.
 
 ### Embed Worker flow
 
@@ -90,7 +90,7 @@ All four implementations tested against the same test suite via the interface. A
 belief_node written to GraphStore (index_state: 'unindexed')
     │ BroadcastChannel notification
     ▼
-Embed Worker: sue.ont().add(node.id, embedding)
+Embed Worker: use.ont().add(node.id, embedding)
     │
     ▼
 GraphStore: nodeUpsert({ ...node, index_state: 'indexed' })
@@ -108,7 +108,7 @@ conversation_turn written (role: 'user')
 Inference Worker: assemble context (last 20 turns + top-5 KNN from ont store)
     │
     ▼
-sue.inference().generate(messages)
+use.inference().generate(messages)
     │
     ▼
 GraphStore: nodeUpsert (narration belief node)
@@ -133,7 +133,7 @@ BroadcastChannel: 'CENTROID_DIRTY'
 
 ### Deliverables
 
-`src/app/main.ts` — boots SUE (browser substrate), starts workers, wires BroadcastChannel, attaches UI
+`src/app/main.ts` — boots USE (browser substrate), starts workers, wires BroadcastChannel, attaches UI
 
 `src/app/index.html` — minimal: message list + input + health badge
 
@@ -147,11 +147,11 @@ Without pglite live queries, reactivity is BroadcastChannel + targeted IndexedDB
 const bc = new BroadcastChannel('lucid');
 bc.onmessage = async (evt) => {
   if (evt.data.type === 'TURNS_UPDATED') {
-    const turns = await sue.graph().nodeQuery({ /* recent conversation */ });
+    const turns = await use.graph().nodeQuery({ /* recent conversation */ });
     renderConversation(turns);
   }
   if (evt.data.type === 'HEALTH_UPDATED') {
-    const spectral = await sue.graph().spectralLatest();
+    const spectral = await use.graph().spectralLatest();
     renderHealthBadge(spectral?.health_score);
   }
 };
@@ -163,7 +163,7 @@ Workers broadcast after every write. The UI reads on broadcast. Simple, no polli
 
 - Type message → response appears
 - Refresh page → conversation persists from IndexedDB
-- `window.__lucy.sue.graph().centroidGet('self')` in console → C_o has moved
+- `window.__lucy.use.graph().centroidGet('self')` in console → C_o has moved
 
 ---
 
@@ -236,7 +236,7 @@ Gateway Lucy — that is a separate deployment with its own integration surface 
 
 ## Cross-cutting
 
-- SUE interfaces are the only thing the feedback loops import. No backing store leaks into core logic.
+- USE interfaces are the only thing the feedback loops import. No backing store leaks into core logic.
 - SEA keypair is generated once, stored securely, never transmitted or logged.
 - The `window.__lucy` (browser) / `global.__lucy` (device) handle is always present — never removed.
 - Every phase has contract tests against the substrate interface, not the implementation.

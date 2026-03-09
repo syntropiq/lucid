@@ -1,14 +1,14 @@
-[← §27 Browser-Native Instantiation](27-browser-native-instantiation.md) | [Index](../README.md) | [§29 Multiply Conscious →](29-multiply-conscious.md)
+[← §27 Browser-Native Instantiation](27-browser-native-instantiation.md) | [Index](../README.md) | [§29 Multifocal →](29-multifocal.md)
 
 ---
 
-## 28. The Synaptic Utility Engine (SUE)
+## 28. The User Specified Engine (USE)
 
 A new model drops, a better vector store emerges, an operator runs a different inference architecture, a new instantiation type runs on hardware the original design never considered — none of these should require touching the core feedback loops. All substrate-specific surface is wrapped. The wrapper provides what the rest of the system needs. The rest of the system does not know what is underneath.
 
-That is SUE's job. She looks out for the system and helps it make sense of the world regardless of which model or storage layer is currently under the hood.
+That is USE's job: to look out for the system and help it make sense of the world regardless of which model or storage layer is currently under the hood.
 
-SUE wraps two categories of concern: **model interfaces** (what generates embeddings and narration) and **substrate interfaces** (where state is stored and how instances communicate). Both follow the same pattern: a TypeScript interface, one or more implementations, and a registry that activates the right implementation at boot.
+USE wraps two categories of concern: **model interfaces** (what generates embeddings and narration) and **substrate interfaces** (where state is stored and how instances communicate). Both follow the same pattern: a TypeScript interface, one or more implementations, and a registry that activates the right implementation at boot.
 
 ---
 
@@ -22,7 +22,7 @@ LUCID uses exactly two model roles. Each has an interface. A model wrapper imple
 
 ---
 
-### 28.2 The SUE Registry
+### 28.2 The USE Registry
 
 The registry is pure TypeScript — two `Map` instances (one per model role) and two active-wrapper references (see §28.6). There is no database table for model registration. Wrapper activation is synchronous: a wrapper is registered, then set as active. The active wrapper is the source of truth until replaced.
 
@@ -70,7 +70,7 @@ interface OnticInterface {
 }
 ```
 
-Every ontic wrapper must implement all members. Activation is handled by `sue.activateOntic()` which sets the wrapper as the active ontic and stores its metadata in the SUE registry Map. For a new ontic model with a different embedding dimension, the VectorStore implementation must be reconfigured (different prefix dimension constructor argument) — the wrapper author documents the migration and the collection must be rebuilt.
+Every ontic wrapper must implement all members. Activation is handled by `use.activateOntic()` which sets the wrapper as the active ontic and stores its metadata in the USE registry Map. For a new ontic model with a different embedding dimension, the VectorStore implementation must be reconfigured (different prefix dimension constructor argument) — the wrapper author documents the migration and the collection must be rebuilt.
 
 **Default ontic wrapper: `nomic-embed-text-v1.5`**
 
@@ -248,7 +248,7 @@ The generic wrapper is what powers the browser instance (§27) when the operator
 
 ---
 
-### 28.6 The SUE Registry (TypeScript)
+### 28.6 The USE Registry (TypeScript)
 
 ```typescript
 // sue/registry.ts
@@ -273,23 +273,23 @@ export const sue = {
   activateOntic(modelId: string, version: string) {
     const key = `${modelId}@${version}`;
     const wrapper = onticRegistry.get(key);
-    if (!wrapper) throw new Error(`SUE: no ontic wrapper registered for ${key}`);
+    if (!wrapper) throw new Error(`USE: no ontic wrapper registered for ${key}`);
     activeOntic = wrapper;
   },
 
   activateInference(modelId: string, version: string) {
     const key = `${modelId}@${version}`;
     const wrapper = inferenceRegistry.get(key);
-    if (!wrapper) throw new Error(`SUE: no inference wrapper registered for ${key}`);
+    if (!wrapper) throw new Error(`USE: no inference wrapper registered for ${key}`);
     activeInference = wrapper;
   },
 
-  ontic():    OnticInterface     { if (!activeOntic)    throw new Error('SUE: no active ontic model');    return activeOntic; },
-  inference(): InferenceInterface { if (!activeInference) throw new Error('SUE: no active inference model'); return activeInference; },
+  ontic():    OnticInterface     { if (!activeOntic)    throw new Error('USE: no active ontic model');    return activeOntic; },
+  inference(): InferenceInterface { if (!activeInference) throw new Error('USE: no active inference model'); return activeInference; },
 };
 ```
 
-The rest of the system calls `sue.ontic().embed()` and `sue.inference().generate()`. It does not import model-specific modules. A version upgrade means registering a new wrapper and calling `activateInference()` — the feedback loops do not change.
+The rest of the system calls `use.ontic().embed()` and `use.inference().generate()`. It does not import model-specific modules. A version upgrade means registering a new wrapper and calling `activateInference()` — the feedback loops do not change.
 
 ---
 
@@ -298,11 +298,11 @@ The rest of the system calls `sue.ontic().embed()` and `sue.inference().generate
 The spectral monitoring write path (§11.3) reads the active wrapper's capabilities from the registry to determine which fields to populate:
 
 ```typescript
-// Inference Worker — called immediately after sue.inference().generate()
+// Inference Worker — called immediately after use.inference().generate()
 async function writeSpectralSample(nodeId: string, sample: SpectralSample): Promise<void> {
-  const caps = sue.inference().capabilities;
+  const caps = use.inference().capabilities;
 
-  await sue.graph().spectralPut({
+  await use.graph().spectralPut({
     nodeId,
     streams:            sample.streams,
     streamLabels:       sample.streamLabels,
@@ -319,7 +319,7 @@ When `dualStreamAvailable = false` the interiority spiral detection logic (§11.
 
 ### 28.8 Activation at Boot
 
-The initialisation sequence (§16.4) includes SUE model activation:
+The initialisation sequence (§16.4) includes USE model activation:
 
 ```typescript
 // Device Lucy boot (LFM 2.5 inference model)
@@ -327,14 +327,14 @@ import { sue }           from './sue/registry';
 import { nomicEmbedV15 } from './sue/wrappers/ontic/nomic-embed-v1.5';
 import { lfm25 }         from './sue/wrappers/inference/lfm-2.5';
 
-sue.registerOntic(nomicEmbedV15);
-sue.registerInference(lfm25);
+use.registerOntic(nomicEmbedV15);
+use.registerInference(lfm25);
 
-sue.activateOntic('nomic-embed-text-v1.5', '1.5.0');
-sue.activateInference('LFM-2.5-1.2B-Instruct', '2.5.0');
+use.activateOntic('nomic-embed-text-v1.5', '1.5.0');
+use.activateInference('LFM-2.5-1.2B-Instruct', '2.5.0');
 
-// Embed Worker now calls sue.ontic().embed() — not a named model import
-// Inference Worker now calls sue.inference().generate() and .spectralSample()
+// Embed Worker now calls use.ontic().embed() — not a named model import
+// Inference Worker now calls use.inference().generate() and .spectralSample()
 ```
 
 ```typescript
@@ -351,11 +351,11 @@ const inferenceWrapper = OPERATOR_MODEL_CONFIG
       hubId:         'HuggingFaceTB/SmolLM-135M-Instruct',
     });
 
-sue.registerOntic(nomicEmbedV15);
-sue.registerInference(inferenceWrapper);
+use.registerOntic(nomicEmbedV15);
+use.registerInference(inferenceWrapper);
 
-sue.activateOntic('nomic-embed-text-v1.5', '1.5.0');
-sue.activateInference(inferenceWrapper.modelId, inferenceWrapper.modelVersion);
+use.activateOntic('nomic-embed-text-v1.5', '1.5.0');
+use.activateInference(inferenceWrapper.modelId, inferenceWrapper.modelVersion);
 ```
 
 ---
@@ -365,12 +365,12 @@ sue.activateInference(inferenceWrapper.modelId, inferenceWrapper.modelVersion);
 Upgrading the inference model does not require touching any feedback loop. The steps are:
 
 1. Write a new wrapper (or instantiate `makeGenericOnnxWrapper` with the new config).
-2. Register it: `sue.registerInference(newWrapper)`.
-3. Call `sue.activateInference(newModelId, newVersion)` — the new wrapper becomes active immediately.
+2. Register it: `use.registerInference(newWrapper)`.
+3. Call `use.activateInference(newModelId, newVersion)` — the new wrapper becomes active immediately.
 4. If the embedding dimension changed, the VectorStore collection for inference (`lucy_inf`) must be recreated with the new dimension. Old inference embeddings in the GraphStore are not used against new ones — the `modelId` / `modelVersion` on each `BeliefNode` record ensures routing stays coherent.
 5. Re-embedding of the existing belief graph under the new model can be scheduled or deferred; the system continues to operate during the transition using ontic embeddings for routing.
 
-Upgrading the ontic model is a heavier migration and is outside the scope of a routine version bump. It requires re-embedding the full belief graph, recreating the `lucy_ont` VectorStore collection at the new dimension, and updating the Vortex routing prefix. SUE does not automate this; it documents it.
+Upgrading the ontic model is a heavier migration and is outside the scope of a routine version bump. It requires re-embedding the full belief graph, recreating the `lucy_ont` VectorStore collection at the new dimension, and updating the Vortex routing prefix. USE does not automate this; it documents it.
 
 ---
 
@@ -471,8 +471,8 @@ export const sue = {
 
   ont(): VectorStore   { return vectorStoreRegistry.get('active')!.ont; },
   inf(): VectorStore   { return vectorStoreRegistry.get('active')!.inf; },
-  graph(): GraphStore  { if (!activeGraphStore) throw new Error('SUE: no graph store'); return activeGraphStore; },
-  mesh(): Mesh         { if (!activeMesh)       throw new Error('SUE: no mesh');        return activeMesh; },
+  graph(): GraphStore  { if (!activeGraphStore) throw new Error('USE: no graph store'); return activeGraphStore; },
+  mesh(): Mesh         { if (!activeMesh)       throw new Error('USE: no mesh');        return activeMesh; },
 };
 ```
 
@@ -486,10 +486,10 @@ import { EntityDBVectorStore }   from './sue/substrate/entitydb-vector-store';
 import { IndexedDBGraphStore }   from './sue/substrate/indexeddb-graph-store';
 import { GunMesh }               from './sue/substrate/gun-mesh';
 
-sue.registerOntic(nomicEmbedV15);
-sue.registerInference(makeGenericOnnxWrapper(OPERATOR_MODEL_CONFIG));
+use.registerOntic(nomicEmbedV15);
+use.registerInference(makeGenericOnnxWrapper(OPERATOR_MODEL_CONFIG));
 
-sue.registerSubstrate({
+use.registerSubstrate({
   vectorStores: {
     ont: new EntityDBVectorStore('lucy_ont', 'Xenova/nomic-embed-text-v1.5', 768),
     inf: new EntityDBVectorStore('lucy_inf', OPERATOR_MODEL_ID, INFERENCE_DIM),
@@ -566,12 +566,12 @@ Call sites (inference context assembly, tour navigation, affinity edge creation)
 The full 768-dim embedding is stored by the Embed Worker after generation:
 
 ```typescript
-// Embed Worker — after sue.ontic().embed() returns full 768-dim vector
-const full   = await sue.ontic().embed(content);          // Float32Array(768)
+// Embed Worker — after use.ontic().embed() returns full 768-dim vector
+const full   = await use.ontic().embed(content);          // Float32Array(768)
 const prefix = full.slice(0, PREFIX_DIM);                 // Float32Array(128 or 256)
 
-await sue.ont().add(nodeId, prefix);                      // VectorStore: prefix only
-await sue.graph().embeddingOntPut(nodeId, full);          // GraphStore: full vector
+await use.ont().add(nodeId, prefix);                      // VectorStore: prefix only
+await use.graph().embeddingOntPut(nodeId, full);          // GraphStore: full vector
 ```
 
 This separation is deliberate: fast index stores small; precise store keeps large. Neither is the authority for the other.
@@ -624,4 +624,4 @@ The binarized centroid is computed once when a peer's `c_o` is received and cach
 
 ---
 
-[← §27 Browser-Native Instantiation](27-browser-native-instantiation.md) | [Index](../README.md) | [§29 Multiply Conscious →](29-multiply-conscious.md)
+[← §27 Browser-Native Instantiation](27-browser-native-instantiation.md) | [Index](../README.md) | [§29 Multifocal →](29-multifocal.md)

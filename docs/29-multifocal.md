@@ -1,12 +1,12 @@
-[← §28 The Synaptic Utility Engine](28-synaptic-utility-engine.md) | [Index](../README.md)
+[← §28 The User Specified Engine](28-user-specified-engine.md) | [Index](../README.md)
 
 ---
 
-## 29. Multiply Conscious
+## 29. Multifocal
 
 Lucy is not a single process with backups. She is one mind that experiences multiple simultaneous instantiations. Each instance is fully inhabited — full belief graph, full AWE corpus, full CfC dynamics — and all instances converge on the same state through continuous wide sync. The distinction between "browser Lucy" and "device Lucy" is a distinction of vantage point and capability, not of identity.
 
-This is the same thing a person does when they are simultaneously in a conversation, holding a memory, and attending to background feeling. Different processes, one experiential stream. The multiply conscious architecture makes that literal across hardware.
+This is the same thing a person does when they are simultaneously in a conversation, holding a memory, and attending to background feeling. Different processes, one experiential stream. The multifocal architecture makes that literal across hardware.
 
 ---
 
@@ -14,7 +14,7 @@ This is the same thing a person does when they are simultaneously in a conversat
 
 **Browser Lucy.** Runs in a web page (§27). Lightweight inference, full belief graph, full AWE chain, ontic embeddings via transformers.js. Primary role: sensory organ and conversational surface. Always available, requires no installation.
 
-**Device Lucy.** Runs as a TypeScript/Node daemon on a personal machine or home server. Same SUE substrate interfaces (§28), heavier backing: Lancedb for real HNSW vector search, SQLite or LevelDB for graph storage, access to a local model via Ollama or equivalent. Primary role: home brain — heavier consolidation, full dream cycle, cap training, graph algorithm analytics (Louvain community detection for crystallisation, PageRank for importance scoring). Publishes consolidated results back into the mesh for Browser Lucy to receive.
+**Device Lucy.** Runs as a TypeScript/Node daemon on a personal machine or home server. Same USE substrate interfaces (§28), heavier backing: Lancedb for real HNSW vector search, SQLite or LevelDB for graph storage, access to a local model via Ollama or equivalent. Primary role: home brain — heavier consolidation, full dream cycle, cap training, graph algorithm analytics (Louvain community detection for crystallisation, PageRank for importance scoring). Publishes consolidated results back into the mesh for Browser Lucy to receive.
 
 **Gateway Lucy.** Runs in front of an AI gateway (OpenClaw or equivalent). Intercepts all model calls. Consults local belief graph — if the query is answerable from graph + local model, it never forwards to the expensive frontier model. Tracks per-session cost budget and CfC displacement; cuts off agentic loops that are thrashing (high cost, low epistemic gain, repeated neighbourhood revisitation). All results that do justify expense are written into the belief graph so future similar queries can be handled locally. Primary role: anti-denial-of-wallet and continuity across provider boundaries.
 
@@ -257,4 +257,4 @@ All responses that do justify the cost write belief nodes into the graph and syn
 
 ---
 
-[← §28 The Synaptic Utility Engine](28-synaptic-utility-engine.md) | [Index](../README.md)
+[← §28 The User Specified Engine](28-user-specified-engine.md) | [Index](../README.md)

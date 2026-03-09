@@ -4,7 +4,7 @@ Phases are sequential. Items marked ⟂ can be parallelised within a phase. See 
 
 ---
 
-## Phase 1 — SUE substrate layer
+## Phase 1 — USE substrate layer
 
 - [ ] Scaffold `src/` directory structure
   - [ ] `src/sue/contracts/` — TypeScript interfaces
@@ -76,7 +76,7 @@ Phases are sequential. Items marked ⟂ can be parallelised within a phase. See 
 
 ---
 
-## Phase 2 — Model wrappers + SUE registry
+## Phase 2 — Model wrappers + USE registry
 
 - [ ] Port `src/sue/contracts/ontic.ts` — `OnticContract` interface ⟂
 - [ ] Port `src/sue/contracts/inference.ts` — `InferenceContract` + `SpectralSample` ⟂
@@ -92,32 +92,32 @@ Phases are sequential. Items marked ⟂ can be parallelised within a phase. See 
   - [ ] Substrate accessors: `ont()`, `inf()`, `graph()`, `mesh()`
 
 - [ ] Phase 2 tests
-  - [ ] `sue.ontic().embed('hello')` → Float32Array length 768
-  - [ ] `sue.inference().generate([{role:'user', content:'hi'}])` → string
-  - [ ] `sue.inference().spectralSample()` → valid SpectralSample
+  - [ ] `use.ontic().embed('hello')` → Float32Array length 768
+  - [ ] `use.inference().generate([{role:'user', content:'hi'}])` → string
+  - [ ] `use.inference().spectralSample()` → valid SpectralSample
 
 ---
 
 ## Phase 3 — Embed + Inference Workers
 
 - [ ] Write `src/workers/embed.worker.ts`
-  - [ ] Boot SUE (ontic wrapper + EntityDB vector store + IndexedDB graph store)
+  - [ ] Boot USE (ontic wrapper + EntityDB vector store + IndexedDB graph store)
   - [ ] BroadcastChannel listener for unindexed nodes
-  - [ ] `full = await sue.ontic().embed(content)` → Float32Array(768)
-  - [ ] `await sue.ont().add(id, full.slice(0, PREFIX_DIM))` — prefix to VectorStore
-  - [ ] `await sue.graph().embeddingOntPut(id, full)` — full vector to GraphStore
-  - [ ] `sue.graph().nodeUpsert({ ...node, index_state: 'indexed' })`
-  - [ ] `sue.graph().syncLogAppend({ type: 'belief:node', ... })`
+  - [ ] `full = await use.ontic().embed(content)` → Float32Array(768)
+  - [ ] `await use.ont().add(id, full.slice(0, PREFIX_DIM))` — prefix to VectorStore
+  - [ ] `await use.graph().embeddingOntPut(id, full)` — full vector to GraphStore
+  - [ ] `use.graph().nodeUpsert({ ...node, index_state: 'indexed' })`
+  - [ ] `use.graph().syncLogAppend({ type: 'belief:node', ... })`
   - [ ] Broadcast `CENTROID_DIRTY`
 
 - [ ] Write `src/workers/inference.worker.ts`
-  - [ ] Boot SUE (inference wrapper + substrates)
+  - [ ] Boot USE (inference wrapper + substrates)
   - [ ] BroadcastChannel listener for new user turns
-  - [ ] Context assembly: last 20 turns from GraphStore + top-5 KNN from `sue.ont()`
-  - [ ] `sue.inference().generate(messages)` → response text
-  - [ ] `sue.graph().nodeUpsert(narrationNode)`
-  - [ ] `sue.graph().awePut(spectralAsSyncEvent)`
-  - [ ] `sue.graph().syncLogAppend({ type: 'belief:node', ... })`
+  - [ ] Context assembly: last 20 turns from GraphStore + top-5 KNN from `use.ont()`
+  - [ ] `use.inference().generate(messages)` → response text
+  - [ ] `use.graph().nodeUpsert(narrationNode)`
+  - [ ] `use.graph().awePut(spectralAsSyncEvent)`
+  - [ ] `use.graph().syncLogAppend({ type: 'belief:node', ... })`
   - [ ] Broadcast `TURNS_UPDATED`
 
 - [ ] Write `src/workers/cfc.worker.ts`
@@ -126,7 +126,7 @@ Phases are sequential. Items marked ⟂ can be parallelised within a phase. See 
   - [ ] Compute provenance-weighted running average for C_o
   - [ ] Apply CfC ODE step for C_w
   - [ ] Check orbital health condition
-  - [ ] `sue.graph().centroidPut(updated)`
+  - [ ] `use.graph().centroidPut(updated)`
   - [ ] Broadcast `HEALTH_UPDATED`; if orbital_health false: broadcast `INJECT_REQUEST`
 
 - [ ] Phase 3 tests
@@ -140,17 +140,17 @@ Phases are sequential. Items marked ⟂ can be parallelised within a phase. See 
 
 - [ ] `src/app/index.html` — message list, input form, health badge, queue indicator
 - [ ] `src/app/main.ts`
-  - [ ] SUE boot (browser substrate)
+  - [ ] USE boot (browser substrate)
   - [ ] Launch Embed Worker, Inference Worker, CfC Worker
   - [ ] BroadcastChannel message handler → targeted GraphStore reads → render
-  - [ ] Form submit → `sue.graph().nodeUpsert(userTurn)` + broadcast `NEW_TURN`
+  - [ ] Form submit → `use.graph().nodeUpsert(userTurn)` + broadcast `NEW_TURN`
   - [ ] `window.__lucy = { sue }` console handle
 - [ ] Vite config — WASM asset handling, Worker bundling
 - [ ] Manual test checklist
   - [ ] Type message → response appears
   - [ ] Refresh → conversation persists
-  - [ ] Console: `window.__lucy.sue.graph().centroidGet('self')` → C_o populated
-  - [ ] Console: `window.__lucy.sue.ont().search(vec, 5)` → returns results
+  - [ ] Console: `window.__lucy.use.graph().centroidGet('self')` → C_o populated
+  - [ ] Console: `window.__lucy.use.ont().search(vec, 5)` → returns results
 
 ---
 
@@ -184,7 +184,7 @@ Phases are sequential. Items marked ⟂ can be parallelised within a phase. See 
   - [ ] `initiateReconciliation(local, remote, remoteInstanceId)`
   - [ ] Mesh subscription: `lucid:reconcile:${INSTANCE_ID}` handler
   - [ ] `handleReconciliationRequest(request)` → assemble own position → respond
-  - [ ] `runDialogue(posA, posB)` — 2-3 round inference loop via `sue.inference().generate()`
+  - [ ] `runDialogue(posA, posB)` — 2-3 round inference loop via `use.inference().generate()`
   - [ ] `writeReconciliationNode(dialogue, winnerId, loserId)` — new node + provenance update
 
 - [ ] Wire into gun-mesh.ts: `detectDivergence` called from incoming event handler
@@ -201,7 +201,7 @@ Phases are sequential. Items marked ⟂ can be parallelised within a phase. See 
 ## Phase 7 — Device Lucy daemon
 
 - [ ] `src/device/index.ts` — Node entry point
-  - [ ] SUE boot with Lancedb + SQLite substrate
+  - [ ] USE boot with Lancedb + SQLite substrate
   - [ ] Same workers as browser (Node-compatible versions)
   - [ ] GunDB Node peer (acts as relay if configured)
 
@@ -220,7 +220,7 @@ Phases are sequential. Items marked ⟂ can be parallelised within a phase. See 
 
 ## Ongoing
 
-- [ ] SUE interfaces are the only thing core logic imports — enforce via ESLint no-restricted-imports
+- [ ] USE interfaces are the only thing core logic imports — enforce via ESLint no-restricted-imports
 - [ ] SEA keypair: never logged, never committed, loaded from env or secure store
 - [ ] `window.__lucy` / `global.__lucy` handle always present, never removed
 - [ ] Every new substrate implementation passes the Phase 1 contract test suite before use
