@@ -32,20 +32,21 @@ The cost is:
 - Proportional to `(2 - ω_ij) ∈ [1, 3]`: edges toward more believed nodes are cheaper; edges toward refuted nodes are more expensive
 - Inversely proportional to source provenance: traversing from high-provenance nodes is cheaper, biasing the tour toward confirmed territory
 
-**Definition 9.2 (Dual Nearest-Neighbour Heuristic Tours).** For each embedding space `x ∈ {i, o}`, construct a nearest-neighbour heuristic tour `τ_x` seeded from `C_s^(x)` using the following procedure, executed as a PL/pgSQL function within PostgreSQL:
+**Definition 9.2 (Dual Nearest-Neighbour Heuristic Tours).** For each embedding space `x ∈ {i, o}`, construct a nearest-neighbour heuristic tour `τ_x` seeded from `C_s^(x)` using the following procedure, executed in the CfC Worker:
 
-```sql
--- Tour procedure (sketch)
--- 1. Initialise at seed node. Maintain visited set V as bigint[] array.
--- 2. At each step, query NeuronDB HNSW over lucid.node_embeddings_{x}
---    for k nearest neighbours of current node's embedding,
---    filtered to unvisited integrated nodes (not in V).
--- 3. For each candidate, compute Hebbian-Belief cost C_x by joining
---    lucid.belief_edges for per-edge Hebbian statistics and belief weight.
--- 4. Advance to minimum-cost candidate. Add to V.
--- 5. Continue until all reachable integrated nodes visited or
---    no unvisited candidates remain within HNSW neighbourhood.
--- 6. Attempt closure.
+```typescript
+// Tour procedure (sketch)
+// 1. Initialise at seed node. Maintain visited set V as Set<string>.
+// 2. At each step, call twoPhaseSearch(currentEmbedding, k, sue.ont(), sue.graph())
+//    for k nearest neighbours in embedding space x,
+//    filtered to unvisited integrated nodes (not in V).
+// 3. For each candidate, compute Hebbian-Belief cost C_x by fetching
+//    edge records from sue.graph().edgesFor() for per-edge Hebbian statistics
+//    and belief weight.
+// 4. Advance to minimum-cost candidate. Add to V.
+// 5. Continue until all reachable integrated nodes visited or
+//    no unvisited candidates remain within search neighbourhood.
+// 6. Attempt closure.
 ```
 
 Four closure outcomes carry distinct diagnostic meanings:

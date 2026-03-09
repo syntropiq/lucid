@@ -18,7 +18,7 @@ This section describes the browser instantiation specifically. The broader deplo
 | Belief graph + AWE + local state | IndexedDB via typed wrapper — all rich schema, high-churn structures |
 | Mesh + wide sync | GunDB over WebRTC/WebSockets — the nervous system between instances |
 | Embeddings | transformers.js — nomic-embed-text-v1.5 (ontic), operator-supplied ONNX (inference) |
-| Model contracts | SUE (§28) — same OnticContract / InferenceContract, browser implementations |
+| Model interfaces | SUE (§28) — same OnticInterface / InferenceInterface, browser implementations |
 | Background processing | Web Workers — Embed Worker, Inference Worker, CfC Worker |
 
 No server required. No WASM database. No libp2p. The browser instance is self-contained and participates in the wider mesh as a peer.

@@ -8,49 +8,49 @@ The index and integration dynamics are the foundation of LUCID. They determine h
 
 ### 5.1 Node Indexing States
 
-Each belief node progresses through a defined sequence of indexing states recorded in `lucid.index_state`:
+Each belief node progresses through a defined sequence of indexing states recorded on the `BeliefNode` record in the GraphStore:
 
 ```
 unindexed → inf_indexed / ont_indexed → indexed → integrated
 ```
 
-- `unindexed`: A stub row exists in `lucid.belief_nodes`, with topology (e.g. PREV/NEXT) but no embeddings.
-- `inf_indexed`: An inference embedding has been stored in `lucid.node_embeddings_inf` for this node.
-- `ont_indexed`: An ontic embedding has been stored in `lucid.node_embeddings_ont` for this node. Order of `inf_indexed` and `ont_indexed` is not guaranteed.
+- `unindexed`: A stub `BeliefNode` record exists in the GraphStore with topology (e.g. PREV/NEXT edges) but no embeddings.
+- `inf_indexed`: An inference embedding has been stored via `GraphStore.embeddingInfPut` for this node.
+- `ont_indexed`: An ontic embedding has been stored via `GraphStore.embeddingOntPut` for this node. Order of `inf_indexed` and `ont_indexed` is not guaranteed.
 - `indexed`: Both embeddings are present; the node is ready for similarity-based operations but has not yet been connected via affinity edges.
 - `integrated`: Affinity edges have been created; the node participates fully in tours, centroids, all identity machinery, and affective valence assignment.
 
-Embedding generation is performed by background workers invoking NeuronDB's in-process ML functions over content registered in `lucid.content`. Each successful INSERT into the embedding tables triggers `lucid._embedding_inserted_trigger`, which promotes the node's `index_state` and records the time at which it first became indexed.
+Embedding generation is performed by the Embed Worker. On receiving a `NEW_NODE` broadcast, the Worker calls `sue.ontic().embed(content)` to produce the ontic vector, writes the 128-dim prefix to `sue.ont()` (VectorStore) and the full 768-dim vector to `sue.graph().embeddingOntPut()`, then upserts the node record with `index_state: 'ont_indexed'`. The inference embedding follows the same pattern via `sue.inference()`. When both embeddings are present the Embed Worker promotes the node to `indexed` and broadcasts `NODE_INDEXED`.
 
 ### 5.2 Index Progress Ratio
 
-Indexing progress is summarised by a ratio reported in `lucid.index_progress`:
+Indexing progress is summarised by a ratio computed in the CfC Worker from counts over the GraphStore:
 
 ```typescript
 // index_ratio = (indexed_nodes + integrated_nodes) / total_nodes
 ```
 
-This is computed from counts over `index_state` and does not require a full table scan. It serves as a coarse measure of how much of the currently known content has reached a state where embedding-based retrieval and integration are possible. It does not, by itself, gate ingest; it is an observable used by operators and higher-level control logic.
+This does not require a full scan; the CfC Worker maintains running counts as it processes `NODE_INDEXED` and `NODE_INTEGRATED` broadcast events. It serves as a coarse measure of how much of the currently known content has reached a state where embedding-based retrieval and integration are possible. It does not, by itself, gate ingest; it is an observable used by operators and higher-level control logic.
 
 ### 5.3 Integration Ratio
 
-Integration is measured by a second ratio, also exposed by `lucid.index_progress`:
+Integration is measured by a second ratio maintained by the CfC Worker:
 
 ```typescript
 // integration_ratio = integrated_nodes / (indexed_nodes + integrated_nodes)
 ```
 
-This expresses how much of the indexed population has been connected via affinity edges and promoted to `index_state = integrated`. A low `integration_ratio` indicates that embeddings have been generated but the similarity structure of the graph has not yet been populated for a substantial fraction of nodes; consolidation should prioritise integration work in that regime.
+This expresses how much of the indexed population has been connected via affinity edges and promoted to `index_state: 'integrated'`. A low `integration_ratio` indicates that embeddings have been generated but the similarity structure of the graph has not yet been populated for a substantial fraction of nodes; consolidation should prioritise integration work in that regime.
 
 ### 5.4 Affinity Edges
 
-When a node reaches `index_state = indexed`, it becomes eligible for integration. During consolidation, the integration process runs the following steps for each such node:
+When a node reaches `index_state: 'indexed'`, it becomes eligible for integration. During consolidation, the integration process runs the following steps for each such node:
 
-1. Query HNSW in inference space: `k` nearest neighbours from `lucid.node_embeddings_inf` within the same `(model_id, model_version)` partition. These are nodes that the assistant model processes in a similar way.
-2. Query HNSW in ontic space: `k` nearest neighbours from `lucid.node_embeddings_ont`. These are nodes that are structurally related in a model-independent embedding space.
-3. Create `similar_inf` edges in `lucid.belief_edges` for inference neighbours, annotating them with cosine similarity and Hebbian statistics.
+1. Query the VectorStore in inference space via `twoPhaseSearch` (§28.13): `k` nearest neighbours using the stored inference prefix and full-vector rerank. These are nodes that the assistant model processes in a similar way.
+2. Query the VectorStore in ontic space via `twoPhaseSearch`: `k` nearest neighbours using the stored ontic prefix and full-vector rerank. These are nodes that are structurally related in a model-independent embedding space.
+3. Create `similar_inf` edges in the GraphStore via `sue.graph().edgeUpsert()` for inference neighbours, annotating them with cosine similarity and Hebbian statistics.
 4. Create `similar_ont` edges analogously for ontic neighbours.
-5. Promote the node to `index_state = integrated`.
+5. Promote the node to `index_state: 'integrated'` via `sue.graph().nodeUpsert()`.
 
 Affinity edges are the structural substrate of the graph. They make it navigable before any explicit epistemic judgments have been attached. Their initial weight is cosine similarity. They are created during consolidation and updated by the Hebbian activation model as traversal accumulates.
 
@@ -68,9 +68,9 @@ This is a structural anomaly detector operating directly on the dual embedding s
 
 These mechanisms implement a continuous indexing and integration loop:
 
-1. Content is registered in `lucid.content` and `lucid.belief_nodes` (`index_state = unindexed`). Sources include operator turns, Lucy's own narration nodes, content encountered during infotactic navigation, and content from Vortex peer exchanges.
-2. Background workers generate embeddings inside PostgreSQL via NeuronDB and advance nodes through `inf_indexed` and `ont_indexed` to `indexed`.
-3. Consolidation phases select `indexed` nodes, create affinity edges, and promote them to `integrated`, raising `integration_ratio`.
+1. Content arrives as a `BeliefNode` record and is written to the GraphStore via `sue.graph().nodeUpsert()` with `index_state: 'unindexed'`. Sources include operator turns, Lucy's own narration nodes, content encountered during infotactic navigation, and content from Vortex peer exchanges.
+2. The Embed Worker picks up unindexed nodes via the `NEW_NODE` broadcast, generates embeddings, writes prefixes to the VectorStore and full vectors to the GraphStore, and advances nodes to `indexed`.
+3. The CfC Worker's consolidation pass selects `indexed` nodes, creates affinity edges via the two-phase search, and promotes them to `integrated`, raising `integration_ratio`.
 4. Index and integration ratios, together with CfC drift and tour metrics, inform when additional consolidation is warranted and when the system is ready to serve operator-facing cycles with a stable internal structure.
 
 ---

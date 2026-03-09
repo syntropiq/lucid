@@ -1,4 +1,4 @@
-[← §25 NeuronDB Integration](25-neurondb-integration.md) | [Index](../README.md)
+[← §25 SUE Substrate Boundaries](25-neurondb-integration.md) | [Index](../README.md)
 
 ---
 
@@ -20,7 +20,7 @@
 
 [8] Adobe Research. (2024). Dialectics for artificial intelligence. *arXiv:2512.17373*.
 
-[9] VORTEX: Verifiable Ontic Routing Through Entangled eXchanges. Semantic Wave Routing for Distributed Reasoning over libp2p Meshes. Version 4.0, March 2026.
+[9] VORTEX: Verifiable Ontic Routing Through Entangled eXchanges. Semantic Wave Routing for Distributed Reasoning over GunDB Meshes. Version 4.0, March 2026.
 
 [10] Popper, K.R. (1945). *The Open Society and Its Enemies*. Routledge, London.
 
@@ -30,4 +30,4 @@
 
 ---
 
-[← §25 NeuronDB Integration](25-neurondb-integration.md) | [Index](../README.md)
+[← §25 SUE Substrate Boundaries](25-neurondb-integration.md) | [Index](../README.md)

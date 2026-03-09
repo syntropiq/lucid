@@ -33,7 +33,7 @@
 | Network-driven centroid drift | `C_o` drifting toward single region; `Ċ_o` high; self-directed navigation low | Reduce `vortex_swim` provenance; increase dream cycle frequency; check navigation/Vortex balance |
 | γ history corruption | Affective valence distribution for peer exchanges shifts anomalously | Rebuild from backup; re-associate by exchange timestamp and content hash |
 | SWIM non-exit | `∅_swim` broadcast persisting; SWIM exit condition not triggering | Check affective response processing; verify non-flat α assignment during swimming |
-| Mesh isolation | Peer contact rate near zero; centroid advertisement unreceived | Check libp2p connectivity; GossipSub mesh health |
+| Mesh isolation | Peer contact rate near zero; centroid advertisement unreceived | Check GunDB peer connectivity; GunMesh relay health; SEA authentication state |
 | Jellyfish accumulation | High rate of `[jellyfish]` annotations on outgoing bilateral contracts | Examine affected ontic neighbourhood; check dual tour health; consider light consolidation |
 | Peer centroid convergence (network clique spiral) | Multiple high-γ peers and Lucy all drifting toward same narrow neighbourhood; inference-tour-only nodes proliferating from peer content | Monitor via dual tours — existing threat detection handles this; do not penalise the cluster, watch the orbital signature |
 

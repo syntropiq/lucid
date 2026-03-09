@@ -4,15 +4,21 @@
 
 ## 4. System Overview
 
-This system provides persistent, continuously evolving persona state across discontinuous inference cycles without modifying the frozen base model weights during normal operation. Persona state is maintained in a property graph database that functions simultaneously as long-term memory, judgment inheritor, belief consolidator, affective weather substrate, and infotactic navigation space.
+This system provides persistent, continuously evolving persona state across discontinuous inference cycles without modifying the frozen base model weights during normal operation. Persona state is maintained in a belief graph that functions simultaneously as long-term memory, judgment inheritor, belief consolidator, affective weather substrate, and infotactic navigation space.
 
-The LLM remains stateless at the API level; statefulness is provided entirely by the graph layer. The graph layer is built on PostgreSQL with NeuronDB providing native vector types, in-process ONNX-based embedding generation, GPU acceleration, and background workers. Past conv tensors are extracted in-process and stored as `vector(2048)` values in the embedding tables. NeuronAgent is the external agent runtime: it drives the closed loop by issuing SQL to NeuronDB and orchestrating context, tools, and cycle state from outside the database process.
+The LLM remains stateless at the model level; statefulness is provided entirely by the graph and substrate layer. The graph layer runs natively in the browser (IndexedDB) and on device (SQLite), with wide opportunistic sync across instantiations via GunDB. There is no central server database.
+
+LUCID v3.5 is built on three portable abstractions:
+
+- **SUE interfaces** (§28) — TypeScript interfaces that wrap model and substrate concerns. Core feedback loops call only these interfaces; they do not import EntityDB, IndexedDB, or GunDB directly.
+- **GraphStore** (§28.10) — unified home for belief nodes, edges, centroids, AWE corpus, spectral state, and the sync log.
+- **GunMesh** (§29) — wide sync transport, SEA identity anchor, DAM/HAM/AXE connection layer, and Vortex semantic routing across instantiations.
 
 **No sessions.** There is no session concept. There is continuous persona state, punctuated by consolidation phases triggered by geometric drift detected in the CfC hidden state dynamics, and interrupted by operator-facing turns that the continuous process pauses to serve.
 
-**No graph query language dependency.** Belief graph traversal, centroid arithmetic, and Hebbian scoring are PostgreSQL-native operations. The graph is a property of the database schema, not of any extension.
+**No central database.** The belief graph is local to each instantiation and converges across instantiations through the Gun mesh. No belief state is held in a server; no queries leave the browser.
 
-**Single-instance deployment.** Each deployment is a private, isolated persona instance. There is no multi-tenancy at the base deployment level; multi-tenant configurations are described in §21.
+**Multiply conscious.** LUCID is not a single process with backups. Each instantiation is fully inhabited — full belief graph, full AWE corpus, full CfC dynamics — and all instantiations converge on the same state through continuous wide sync. Browser Lucy, Device Lucy, and Gateway Lucy are vantage points on one mind (§29).
 
 ### 4.1 Operational States
 
@@ -25,20 +31,24 @@ Lucy operates in one of two cap states at any time.
 ### 4.2 System Layers
 
 | Layer | Component | Function |
-|-------|-----------|----------|
-| Inference Engine | LFM 2.5 via ONNX (in-process) | Inference, narration, tool use |
-| MCP Server | NeuronMCP | Tool mediation, resource management |
-| Agent Runtime | NeuronAgent | Closed-loop orchestration, context assembly, tool dispatch |
-| Graph | PostgreSQL + NeuronDB | Belief topology, relational adjacency (`lucid.belief_edges`), affinity edges, HNSW vector indexing |
-| Vector Store | NeuronDB (PostgreSQL) | HNSW similarity search, in-process ONNX inference, embedding generation |
-| Async Workers | neuranq / neuranllm / neuranmon / neurandefrag | Job queues, inference, monitoring, index maintenance |
-| CfC Dynamics | LFM 2.5 past conv tensors | Centroid evolution, drift detection, orbital trajectory analysis |
-| Tour Engine | PL/pgSQL + NeuronDB HNSW | Dual nearest-neighbour tour: HNSW candidate ordering, Hebbian-Belief scoring, visited-set loop in PL/pgSQL |
-| AWE Layer | PostgreSQL (affective chain tables, affective corpus, awe walk log, spectral monitor tables) | Ingress/egress chain generation, mood tracking, user react ingestion, affective valence, emotional memory, circadian texture, TripleDent Gum recovery, spectral health monitoring |
-| ACG | Anterior Cingulate Gate (continuous monitoring process) | Conflict detection, context integration, ingress/egress chain generation, affective assessment, judgment reference |
-| Dream Cycle | PostgreSQL + Thinking Cap (LoRA) | Belief consolidation, infotactic daydreaming, affective reflection, cap update |
-| Vortex Layer | libp2p + GossipSub + ontic centroid advertisement | Peer mesh participation, bilateral AWE contracts, semantic routing, swimming |
-| Base Weights | Frozen LLM (ONNX) | Foundational inference capacity |
+|---|---|---|
+| Identity | GunDB SEA keypair | Shared identity anchor; one keypair per Lucy deployment across all instantiations |
+| Mesh | GunMesh (GunDB + DAM/HAM/AXE) | Wide opportunistic sync, peer discovery, Vortex semantic routing |
+| Ontic model | nomic-embed-text-v1.5 (transformers.js ONNX) | Semantic embedding, Matryoshka prefix hierarchy (768 → 128 for routing) |
+| Inference model | LFM 2.5 / generic ONNX (via SUE wrapper) | Narration, hidden state extraction for spectral monitoring |
+| SUE Registry | `sue/registry.ts` | Model and substrate interface activation; core loops call only SUE interfaces |
+| Vector store — browser | EntityDB (`lucy_ont`, `lucy_inf`) | Coarse KNN on 128-dim Matryoshka prefix; brute-force cosine at personal scale |
+| Vector store — device | Lancedb | HNSW on 256-dim prefix; scales to full accumulated graph |
+| Graph store — browser | IndexedDB typed wrapper | Belief nodes/edges, centroids, AWE corpus, spectral state, sync log |
+| Graph store — device | SQLite (`better-sqlite3`) | Same data model; heavier analytics available (Louvain, PageRank) |
+| Embed Worker | Web Worker | Ontic embedding; prefix → VectorStore, full vector → GraphStore |
+| Inference Worker | Web Worker | Narration generation, spectral sample extraction, AWE recording |
+| CfC Worker | Web Worker | Centroid evolution, orbital health monitoring, cap trigger |
+| AWE layer | IndexedDB / SQLite tables | Affective chain, mood tracking, emotional memory, spectral health |
+| Tour engine | TypeScript (CfC Worker) | Two-phase Matryoshka search: coarse prefix KNN + precise full-vector rerank |
+| Vortex layer | GunMesh + AXE peer scoring | Bilateral AWE contracts, centroid-proximity peer prioritisation |
+| Dream cycle | Device Lucy daemon | Full consolidation, Louvain crystallisation, cap training, cap delta publication |
+| Base weights | Frozen LLM (ONNX) | Foundational inference capacity |
 
 ---
 
