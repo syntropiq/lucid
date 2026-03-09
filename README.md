@@ -45,8 +45,6 @@ The full design document is decomposed into the following sections.
 
 ---
 
-The original monolithic design document is preserved at [`LUCID_v2.5.md`](LUCID_v2.5.md).
-
 The v3.1 monolithic design document is at [`LUCID_v3.1.md`](LUCID_v3.1.md).
 
 Active build plan and task tracking: [`TODO.md`](TODO.md).
