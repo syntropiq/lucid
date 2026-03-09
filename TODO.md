@@ -1,160 +1,226 @@
-# LUCID Build TODO
+# LUCID — TODO
 
-Working branch: `claude/review-docs-plan-PgdA6`
-
-Design docs: `docs/` — start with `docs/00-introduction.md` and `docs/26-implementation-plan.md`.
-
-## Context
-
-Two projects. One shared schema.
-
-- **Project 1** — Browser prototype ("Lucy's Fingers"): PGlite + pgvector + Transformers.js + ChromaDB + Electric SQL. Browser-native, proves the continuous loop, permanent human UI.
-- **Project 2** — Full deployment ("Lucy's Home"): NeuronDB + LFM 2.5 ONNX server-side + OpenAI-compatible API proxy. Runs on a beefy machine.
-
-Electric SQL syncs state from Project 1 → Project 2. The schema is identical in both.
-
-See `docs/26-implementation-plan.md` for full rationale and stack breakdown.
+Phases are sequential. Items marked ⟂ can be parallelised within a phase. See `PLAN.md` for rationale.
 
 ---
 
-## Phase 0 — Foundation (no external deps)
+## Phase 1 — SUE substrate layer
 
-- [ ] **Shared schema migration** (`lucid.*`)
-  - Tables: `content`, `belief_nodes`, `node_embeddings_inf` (vector 2048), `node_embeddings_ont` (vector 768), `belief_edges`, `centroids`, `tour_closure`, `affective_corpus`, `inheritance_corpus`, `awe_walk_log`, `spectral_monitor`
-  - `lucid.content` needs a `modality` column: `text | image | audio | av` — routes content to the correct cortex for re-embedding
-  - Triggers: auto-create `PREV`/`NEXT`/`CONTAINS` structural edges on belief_node insert
-  - Target: PGlite + pgvector compatible (no NeuronDB-specific syntax)
-  - File: `schema/001_lucid_core.sql`
+- [ ] Scaffold `src/` directory structure
+  - [ ] `src/sue/contracts/` — TypeScript interfaces
+  - [ ] `src/sue/substrate/` — implementations
+  - [ ] `src/sue/wrappers/` — model wrappers (Phase 2)
+  - [ ] `src/core/` — feedback loop logic
+  - [ ] `src/workers/` — Web Workers
+  - [ ] `src/app/` — UI
+  - [ ] `src/device/` — Device Lucy daemon
+  - [ ] `package.json`, `tsconfig.json`, `vite.config.ts`
 
-- [ ] **PL/pgSQL tour engine**
-  - Dual HNSW nearest-neighbour tour procedure (per §23)
-  - Hebbian-Belief cost function (Definition 9.1)
-  - Overlap set Ω computation, injection signal
-  - File: `schema/002_tour_engine.sql`
+- [ ] Write `src/sue/contracts/types.ts` — shared types ⟂
+  - [ ] `BeliefNode`, `BeliefEdge`, `EdgeType`, `NodeType`
+  - [ ] `CentroidRecord` (c_i, c_o, c_s, c_w, c_0, orbital_health)
+  - [ ] `AWEEntry` (valence, arousal, mood_token)
+  - [ ] `SpectralRecord` (streams, stream_labels, cross_corr, health_score)
+  - [ ] `SyncEvent` (id, type, payload, instance_id, created_at)
+  - [ ] `ConversationTurn` (id, role, content, mood_token, created_at)
+  - [ ] `ReconciliationRecord`
 
-- [ ] **PL/pgSQL utility functions**
-  - Centroid update: `lucid.update_centroid(name, new_vec)`
-  - Provenance weight arithmetic (§7)
-  - Unified threat score S(n) (§9)
-  - File: `schema/003_functions.sql`
+- [ ] Write `src/sue/contracts/vector-store.ts` — `VectorStore` interface ⟂
+  - [ ] `add(id, prefix, metadata)` — stores truncated prefix (128-dim browser, 256-dim device)
+  - [ ] `search(queryPrefix, k)` — coarse KNN on prefix
+  - [ ] `get(id)`, `delete(id)`
+- [ ] Write `src/sue/contracts/graph-store.ts` — `GraphStore` interface ⟂
+  - [ ] All node/edge/centroid/AWE/spectral/sync methods
+  - [ ] `embeddingOntPut(nodeId, full768)` + `embeddingOntGet(nodeId)` — full vectors for rerank
+  - [ ] `embeddingInfPut(nodeId, fullInf)` + `embeddingInfGet(nodeId)`
+- [ ] Write `src/sue/contracts/mesh.ts` — `Mesh` interface ⟂
+- [ ] Write `src/core/vector-utils.ts` ⟂
+  - [ ] `cosineSimilarity(a, b)`
+  - [ ] `binarize(vec, dims)` — float → Uint8Array packed bits
+  - [ ] `hammingScore(a, b)` — XOR + popcount, returns 0–1
+  - [ ] `popcount(x)` — bit count kernel
+- [ ] Write `src/core/search.ts` ⟂
+  - [ ] `twoPhaseSearch(queryFull, k, ont, graph, prefix)` — coarse KNN + precise rerank
 
----
+- [ ] Write `src/sue/substrate/entitydb-vector-store.ts` ⟂
+  - [ ] `add(id, vector, metadata)` → EntityDB insert
+  - [ ] `search(query, k)` → EntityDB cosine KNN
+  - [ ] `get(id)` → EntityDB fetch by ID
+  - [ ] `delete(id)` → EntityDB remove
 
-## Phase 1 — Project 1 Browser Prototype
+- [ ] Write `src/sue/substrate/indexeddb-graph-store.ts` ⟂
+  - [ ] Object store definitions: belief_nodes, belief_edges, awe_corpus, spectral_monitor, centroids, conversation_turns, sync_log, reconciliation_log
+  - [ ] `nodeUpsert`, `nodeGet`, `nodeQuery`
+  - [ ] `edgeUpsert`, `edgesFor`
+  - [ ] `centroidGet`, `centroidPut`
+  - [ ] `awePut`, `aweRecent`
+  - [ ] `spectralPut`, `spectralLatest`
+  - [ ] `syncLogAppend`, `syncLogPending`
 
-- [ ] **Project scaffold**
-  - TypeScript + Vite browser app
-  - PGlite + pgvector extension wired up
-  - Schema migrations run on first load
-  - Directory: `projects/lucy-browser/`
+- [ ] Write `src/sue/substrate/gun-mesh.ts` ⟂
+  - [ ] Constructor: `new GunMesh(peers, seaPair)` — Gun init + SEA auth
+  - [ ] `publish`, `subscribe`
+  - [ ] `advertise`, `observe`
+  - [ ] `peers()`
+  - [ ] `syncLogDrain(graphStore)` — drains pending events into Gun mind namespace
+  - [ ] Incoming event handler skeleton (hydration in Phase 5)
 
-- [ ] **Cortex abstraction + Transformers.js ONNX runner**
-  - LFM 2.5 shares a CfC backbone across text, vision, and audio variants — all emit past_conv tensors into the same inference space
-  - Cortex contract: `cortex.embed(input: CortexInput): Promise<Float32Array>` (length 2048)
-  - **ONNX session structure** (confirmed from VL model card):
-    - `embed_tokens.onnx` — token embeddings; used by tactile cortex
-    - `embed_images.onnx` — vision encoder; used by visual cortex
-    - `decoder.onnx` — shared by all cortexes; produces `present_conv_*` and `present_key_values_*`
-  - **`past_conv_*`** tensors: shape `[1, hiddenSize, 3]`, fixed-size, do not grow — these are the inference embedding source
-  - **`past_key_values_*`** tensors: shape `[1, numKVHeads, seq, headDim]`, grows with sequence — attention KV cache, not the embedding
-  - **Tactile cortex** — LFM 2.5 text (1.2B); `embed_tokens → decoder`; primary continuous loop cortex
-  - **Visual cortex** — LFM 2.5-VL (1.6B); `embed_images → decoder`; browser camera + screen; `hiddenSize=2048` (confirmed from weights)
-  - **Audio cortex** — LFM 2.5-Audio (1.5B); confirmed ONNX export exists (`LiquidAI/LFM2.5-Audio-1.5B-ONNX`); Web Audio API
-  - **Reasoning cortex** — Cloud LLM (Claude etc.); operator turns only; not an embedding source
-  - **WebGPU constraint**: FP16 encoder + Q4 decoder only — Q8 decoder not supported on WebGPU; use Q4 weights in browser build
-  - `embed_ont(text): vector(768)` — ontic space (Nomic Matryoshka); text only; unchanged
-  - `narrate(context): string` — narration generation; tactile cortex decoder
+- [ ] Write `src/sue/substrate/lancedb-vector-store.ts` (Node-only) ⟂
+- [ ] Write `src/sue/substrate/sqlite-graph-store.ts` (Node-only) ⟂
 
-- [ ] **Continuous loop skeleton**
-  - Basic infotactic navigation loop (§10.2)
-  - Select next target via curiosity-weighted cost
-  - Fetch web content, register in `lucid.content`
-  - Generate narration node, write to `lucid.belief_nodes`
-  - Update working centroid Cw
-
-- [ ] **ACG — ingress/egress**
-  - Ingest operator turn, compute ingress chain E_t_in (Definition AWE.0b)
-  - After response, compute egress chain E_t_out (Definition AWE.0c)
-  - Derive mood token m_t
-  - Write affective corpus entry
-
-- [ ] **ChromaDB integration** (batch analytics stand-in)
-  - Dream cycle crystallisation: Louvain community detection
-  - PageRank for merge survivor selection
-  - Interface designed to be swappable for NeuronDB vgraph later
-
-- [ ] **Basic operator UI**
-  - Chat interface connecting to Lucy's loop
-  - Mood token display (optional, per §13.5)
-  - Belief graph visualisation (stretch)
-
-- [ ] **Electric SQL sync**
-  - PGlite → server Postgres replication config
-  - Tables in sync scope: `belief_nodes`, `belief_edges`, `centroids`, `affective_corpus`
+- [ ] Phase 1 tests — contract test suite that all implementations must pass
+  - [ ] `VectorStore` contract tests: add, search returns k results, get, delete
+  - [ ] `GraphStore` contract tests: node CRUD, edge CRUD, centroid round-trip, sync log append + pending
+  - [ ] Run contract tests against EntityDB + IndexedDB implementations
+  - [ ] Run contract tests against Lancedb + SQLite implementations
 
 ---
 
-## Phase 2 — Project 2 Full Deployment
+## Phase 2 — Model wrappers + SUE registry
 
-- [ ] **NeuronDB setup**
-  - PostgreSQL + NeuronDB extension installed
-  - Schema promotion from Phase 0 (drop pgvector shims, use NeuronDB native HNSW)
-  - Background workers: neuranq, neurandefrag, neuranmon, neuranllm
+- [ ] Port `src/sue/contracts/ontic.ts` — `OnticContract` interface ⟂
+- [ ] Port `src/sue/contracts/inference.ts` — `InferenceContract` + `SpectralSample` ⟂
 
-- [ ] **neuranq event channels**
-  - Job type handlers: `lucid_interrupt`, `lucid_judgment`, `lucid_consolidate`, `lucid_consolidation`, `lucid_drift`, `lucid_awe_flatline`, `lucid_orbital`
-  - Per §10.4 trigger conditions and responses
+- [ ] Write `src/sue/wrappers/ontic/nomic-embed-v1.5.ts` ⟂
+- [ ] Write `src/sue/wrappers/inference/generic-onnx.ts` — `makeGenericOnnxWrapper()` ⟂
+- [ ] Write `src/sue/wrappers/inference/lfm-2.5.ts` (dual-stream) ⟂
 
-- [ ] **LFM 2.5 ONNX server-side**
-  - Server-side ONNX runtime replacing Transformers.js
-  - Same embed_inf / embed_ont / narrate interface
+- [ ] Write `src/sue/registry.ts` — unified registry
+  - [ ] Model methods: `registerOntic`, `activateOntic`, `ontic()`
+  - [ ] Model methods: `registerInference`, `activateInference`, `inference()`
+  - [ ] Substrate method: `registerSubstrate({ vectorStores, graphStore, mesh })`
+  - [ ] Substrate accessors: `ont()`, `inf()`, `graph()`, `mesh()`
 
-- [ ] **OpenAI-compatible API proxy**
-  - POST /v1/chat/completions
-  - Context assembly from ACG continuous state
-  - Cloud LLM mount (configurable: Claude API, etc.)
-  - Response egress through ACG
-
-- [ ] **Electric SQL receive**
-  - Accept synced state from browser prototype instances
-
-- [ ] **Dream cycle — full**
-  - Crystallisation (Louvain via vgraph_community_detection)
-  - Integration prioritisation (vgraph_pagerank)
-  - Affective reflection (AWE walk log seeding community detection)
-  - Thinking Cap: LoRA adapter generation, soft correction, cap rollback (§12)
-
-- [ ] **ChromaDB → NeuronDB migration**
-  - Promote batch analytics path to native NeuronDB vgraph
-  - Remove ChromaDB dependency
+- [ ] Phase 2 tests
+  - [ ] `sue.ontic().embed('hello')` → Float32Array length 768
+  - [ ] `sue.inference().generate([{role:'user', content:'hi'}])` → string
+  - [ ] `sue.inference().spectralSample()` → valid SpectralSample
 
 ---
 
-## Phase 3 — Hardening
+## Phase 3 — Embed + Inference Workers
 
-- [ ] Spectral monitoring (§11) — dual-stream FFT, DC dominance detection
-- [ ] TripleDent Gum recovery (§11 / §18)
-- [ ] Orbital health condition (Definition 6.1)
-- [ ] Failure mode detection and response (§18)
-- [ ] Multi-tenancy (§20) — tenant isolation, RLS policies
-- [ ] Security model (§19)
-- [ ] Compliance and data residency (§17)
-- [ ] Verification queue and sampling (§22)
+- [ ] Write `src/workers/embed.worker.ts`
+  - [ ] Boot SUE (ontic wrapper + EntityDB vector store + IndexedDB graph store)
+  - [ ] BroadcastChannel listener for unindexed nodes
+  - [ ] `full = await sue.ontic().embed(content)` → Float32Array(768)
+  - [ ] `await sue.ont().add(id, full.slice(0, PREFIX_DIM))` — prefix to VectorStore
+  - [ ] `await sue.graph().embeddingOntPut(id, full)` — full vector to GraphStore
+  - [ ] `sue.graph().nodeUpsert({ ...node, index_state: 'indexed' })`
+  - [ ] `sue.graph().syncLogAppend({ type: 'belief:node', ... })`
+  - [ ] Broadcast `CENTROID_DIRTY`
+
+- [ ] Write `src/workers/inference.worker.ts`
+  - [ ] Boot SUE (inference wrapper + substrates)
+  - [ ] BroadcastChannel listener for new user turns
+  - [ ] Context assembly: last 20 turns from GraphStore + top-5 KNN from `sue.ont()`
+  - [ ] `sue.inference().generate(messages)` → response text
+  - [ ] `sue.graph().nodeUpsert(narrationNode)`
+  - [ ] `sue.graph().awePut(spectralAsSyncEvent)`
+  - [ ] `sue.graph().syncLogAppend({ type: 'belief:node', ... })`
+  - [ ] Broadcast `TURNS_UPDATED`
+
+- [ ] Write `src/workers/cfc.worker.ts`
+  - [ ] BroadcastChannel listener for `CENTROID_DIRTY`
+  - [ ] Read current centroid from GraphStore
+  - [ ] Compute provenance-weighted running average for C_o
+  - [ ] Apply CfC ODE step for C_w
+  - [ ] Check orbital health condition
+  - [ ] `sue.graph().centroidPut(updated)`
+  - [ ] Broadcast `HEALTH_UPDATED`; if orbital_health false: broadcast `INJECT_REQUEST`
+
+- [ ] Phase 3 tests
+  - [ ] Insert belief node → verify EntityDB `lucy_ont` has vector within 5s
+  - [ ] Insert user turn → verify assistant turn in GraphStore within 10s
+  - [ ] Verify sync_log has entries after both
 
 ---
 
-## Notes for Resumption
+## Phase 4 — Chat interface
 
-- All work goes on branch `claude/review-docs-plan-PgdA6`
-- Start reading from `docs/26-implementation-plan.md` then `docs/06-the-graph-database.md` (schema source of truth) and `docs/23-tour-engine-architecture.md` (tour engine source of truth)
-- First code artifact is `schema/001_lucid_core.sql` — write it to be valid PGlite + pgvector SQL, no NeuronDB-specific syntax
-- ChromaDB is a temporary stand-in only for the dream cycle batch analytics path; the core loop does not touch it
-- The ONNX model for inference-space embeddings uses `past_conv_*` tensors (shape `[1, 2048, 3]`), NOT standard last-hidden-state and NOT growing KV cache
-- **`vector(2048)` is confirmed correct** — all three LFM2.5 models share the same LFM2-1.2B backbone (`hidden_size=2048`, `conv_L_cache=3`); the "1.5B" and "1.6B" parameter counts come from modality encoders only
-- **All three models have identical `layer_types`**: 10 conv + 6 full_attention → exactly **10 `past_conv_*` tensors** per forward pass, each `[1, 2048, 3]`
-  - Text 1.2B: LFM2-1.2B only
-  - VL 1.6B: SigLIP2 encoder (`hidden_size=1152`) → projector (→ 2048) → LFM2-1.2B
-  - Audio 1.5B: Conformer encoder (`d_model=512`) → LFM2-1.2B → Depthformer (`dim=1024`)
-- VL ONNX splits into three sessions: `embed_tokens`, `embed_images`, `decoder` — the decoder is shared across cortexes
-- WebGPU requires Q4 decoder weights, not Q8 — browser build uses `decoder_q4.onnx` + `embed_*_fp16.onnx`
-- Audio cortex: `LiquidAI/LFM2.5-Audio-1.5B-ONNX` on HuggingFace
+- [ ] `src/app/index.html` — message list, input form, health badge, queue indicator
+- [ ] `src/app/main.ts`
+  - [ ] SUE boot (browser substrate)
+  - [ ] Launch Embed Worker, Inference Worker, CfC Worker
+  - [ ] BroadcastChannel message handler → targeted GraphStore reads → render
+  - [ ] Form submit → `sue.graph().nodeUpsert(userTurn)` + broadcast `NEW_TURN`
+  - [ ] `window.__lucy = { sue }` console handle
+- [ ] Vite config — WASM asset handling, Worker bundling
+- [ ] Manual test checklist
+  - [ ] Type message → response appears
+  - [ ] Refresh → conversation persists
+  - [ ] Console: `window.__lucy.sue.graph().centroidGet('self')` → C_o populated
+  - [ ] Console: `window.__lucy.sue.ont().search(vec, 5)` → returns results
+
+---
+
+## Phase 5 — Gun mesh + wide sync
+
+- [ ] Complete `src/sue/substrate/gun-mesh.ts`
+  - [ ] `syncLogDrain()` timer — drains pending sync_log into Gun mind namespace
+  - [ ] `mind.get('events').map().on(...)` — incoming event handler
+  - [ ] `hydrateEvent(event)` — write incoming events to local GraphStore
+  - [ ] `detectDivergence(event)` — check for belief conflict (Phase 6 handles resolution)
+  - [ ] Centroid advertisement: `mind.get('instances').get(INSTANCE_ID).get('centroid').put(...)`
+  - [ ] Peer centroid cache: observe `mind.get('instances').map()` for centroid updates
+
+- [ ] AXE peer scoring hook
+  - [ ] `Gun.on('opt', ...)` override of `axe.opt.peers`
+  - [ ] Cosine similarity scoring against peer centroid cache
+  - [ ] Matryoshka prefix (128-dim) for routing comparison
+
+- [ ] Phase 5 tests
+  - [ ] Two tabs, same SEA keypair → verify sync_log events propagate
+  - [ ] Write belief node in tab A → verify it appears in tab B's IndexedDB
+  - [ ] Verify peer centroid cache in tab B has tab A's C_o
+
+---
+
+## Phase 6 — Self-dialogue reconciliation
+
+- [ ] Write `src/core/reconciliation.ts`
+  - [ ] `detectDivergence(local, remote)` — content diff + valence threshold
+  - [ ] `assemblePosition(node)` — context package: node + associated AWE + recent turns
+  - [ ] `initiateReconciliation(local, remote, remoteInstanceId)`
+  - [ ] Mesh subscription: `lucid:reconcile:${INSTANCE_ID}` handler
+  - [ ] `handleReconciliationRequest(request)` → assemble own position → respond
+  - [ ] `runDialogue(posA, posB)` — 2-3 round inference loop via `sue.inference().generate()`
+  - [ ] `writeReconciliationNode(dialogue, winnerId, loserId)` — new node + provenance update
+
+- [ ] Wire into gun-mesh.ts: `detectDivergence` called from incoming event handler
+
+- [ ] Phase 6 tests
+  - [ ] Manually write divergent nodes to two instances
+  - [ ] Verify reconciliation request published to mesh
+  - [ ] Verify dialogue runs (≥ 2 turns)
+  - [ ] Verify reconciliation node in graph with edges to both originals
+  - [ ] Verify loser provenance < original provenance
+
+---
+
+## Phase 7 — Device Lucy daemon
+
+- [ ] `src/device/index.ts` — Node entry point
+  - [ ] SUE boot with Lancedb + SQLite substrate
+  - [ ] Same workers as browser (Node-compatible versions)
+  - [ ] GunDB Node peer (acts as relay if configured)
+
+- [ ] `src/device/dream-cycle.ts` — full consolidation (§12)
+  - [ ] Crystallisation pass using Louvain community detection
+  - [ ] Cap delta computation
+  - [ ] Cap delta publication to Gun mesh
+
+- [ ] `src/device/analytics.ts`
+  - [ ] Louvain community detection over belief edge graph
+  - [ ] PageRank for tour node importance weighting
+
+- [ ] Phase 7 test: `node src/device/index.ts` starts, connects to mesh, receives events from browser tab
+
+---
+
+## Ongoing
+
+- [ ] SUE interfaces are the only thing core logic imports — enforce via ESLint no-restricted-imports
+- [ ] SEA keypair: never logged, never committed, loaded from env or secure store
+- [ ] `window.__lucy` / `global.__lucy` handle always present, never removed
+- [ ] Every new substrate implementation passes the Phase 1 contract test suite before use
