@@ -97,7 +97,7 @@ Three Web Workers. Each is isolated; all state lives in IndexedDB/EntityDB, not 
 └────────┘  └──────────────┘  └──────────────┘
 ```
 
-**Embed Worker.** Subscribes to unindexed nodes in IndexedDB (polling or BroadcastChannel notification). Calls `sue.ontic().embed(content)`, writes to EntityDB `lucy_ont`, marks node indexed, posts a `CENTROID_DIRTY` message to the CfC Worker.
+**Embed Worker.** Subscribes to unindexed nodes via BroadcastChannel. Calls `sue.ontic().embed(content)` to get the full 768-dim vector, then writes it in two places: the 128-dim prefix goes to `sue.ont().add()` (EntityDB `lucy_ont` — fast coarse search), and the full 768-dim vector goes to `sue.graph().embeddingOntPut()` (GraphStore — used for two-phase re-ranking, §28.13). Marks node indexed. Posts `CENTROID_DIRTY` to the CfC Worker.
 
 **Inference Worker.** Triggered by new user turns via BroadcastChannel. Assembles the context package in TypeScript (last N turns from IndexedDB + top-K KNN from EntityDB). Calls `sue.inference().generate()`, writes response turn and narration belief node to IndexedDB, writes spectral sample. All downstream work (AWE chain, sync log entry) is triggered by the IndexedDB write, not by the worker.
 
@@ -155,34 +155,65 @@ mind.get('events').map().on(async (event, id) => {
 
 ### 27.6 Centroid Advertisement (AXE Integration)
 
-GunDB's AXE layer handles peer routing optimisation. LUCID plugs ontic centroid proximity into AXE's peer scoring to implement Vortex routing without libp2p:
+GunDB's AXE layer handles peer routing optimisation. LUCID plugs ontic centroid proximity into AXE's peer scoring to implement Vortex routing without libp2p.
+
+Peer scoring uses binary quantization (§28.13): each peer's `c_o` is stored as both a full Float32Array (768-dim, for precise work-packet routing) and a 16-byte binarized form (128-dim packed into bits, for AXE scoring). AXE scoring uses Hamming similarity — XOR + popcount — which is hardware-accelerated and costs nothing at the scale of connected peers. This means AXE can re-score all peers on every local centroid update without batching or throttle.
 
 ```typescript
-// Advertise current C_o to the mesh
+import { binarize, hammingScore } from '../core/vector-utils';
+
+// Peer centroid cache — two representations per peer
+const peerCache = new Map<string, { full: Float32Array; bits: Uint8Array }>();
+
+// On receiving a peer centroid advertisement
+function cachePeerCentroid(peerId: string, c_o: Float32Array) {
+  peerCache.set(peerId, {
+    full: c_o,
+    bits: binarize(c_o, 128),   // 16 bytes — used for AXE scoring
+  });
+}
+
+// Advertise local C_o to the mesh (called by CfC Worker after every centroid update)
 async function advertiseCentroid() {
-  const { c_o } = await idb.get('centroids', 'self');
-  mind.get('centroid').put({
-    c_o: Array.from(c_o),
+  const { c_o } = await sue.graph().centroidGet('self');
+  localBits = binarize(c_o, 128);   // recompute local bits on update
+  mind.get('instances').get(INSTANCE_ID).get('centroid').put({
+    c_o:        Array.from(c_o),
     updated_at: Date.now(),
   });
 }
 
-// AXE peer scoring: prefer peers whose C_o is close to our current query
+// AXE peer scoring: Hamming similarity on binarized 128-dim prefix
 Gun.on('opt', function(ctx) {
   if (!ctx.opt.axe) return;
   const axe = ctx.opt.axe;
-  const originalScore = axe.score.bind(axe);
-  axe.score = async (peer) => {
-    const base = await originalScore(peer);
-    const peerCentroid = await getPeerCentroid(peer.id);
-    if (!peerCentroid) return base;
-    const proximity = cosineSimilarity(localCentroid, peerCentroid);
-    return base + proximity * CENTROID_WEIGHT;
+  axe.opt.peers = async (peers) => {
+    return peers
+      .map(peer => {
+        const entry    = peerCache.get(peer.id);
+        const proximity = entry ? hammingScore(localBits, entry.bits) : 0.5;
+        return { peer, score: proximity };
+      })
+      .sort((a, b) => b.score - a.score)
+      .map(({ peer }) => peer);
   };
 });
 ```
 
-Peers whose ontic centroids are semantically close receive higher AXE scores and more stable connections. Centroid divergence naturally causes connection priority to shift — the mesh self-organises around semantic proximity without any routing protocol.
+When a work packet arrives and the accept/forward decision needs precision (not just routing priority), the full `Float32Array` is used:
+
+```typescript
+// Accept if full cosine similarity exceeds threshold; forward otherwise
+const entry = peerCache.get(senderId);
+const precise = entry ? cosineSimilarity(localCentroidFull, entry.full) : 0;
+if (precise > ACCEPT_THRESHOLD) {
+  await sue.graph().nodeUpsert(packet.beliefNode);
+} else {
+  forwardToHighestScoringPeer(packet);
+}
+```
+
+Peers whose ontic centroids are semantically close receive higher AXE scores and more stable connections. The mesh self-organises around semantic proximity — no routing protocol, just connection priorities shaped by centroid affinity.
 
 ---
 
