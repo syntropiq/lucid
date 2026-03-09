@@ -10,8 +10,8 @@ This section documents the explicit boundary between what LUCID delegates to SUE
 
 | Capability | Substrate implementation |
 |---|---|
-| Ontic embedding generation | `OnticContract.embed()` — nomic-embed-text-v1.5 via transformers.js ONNX |
-| Inference embedding / hidden state extraction | `InferenceContract.generate()` + `spectralSample()` — LFM 2.5 or generic ONNX |
+| Ontic embedding generation | `OnticInterface.embed()` — nomic-embed-text-v1.5 via transformers.js ONNX |
+| Inference embedding / hidden state extraction | `InferenceInterface.generate()` + `spectralSample()` — LFM 2.5 or generic ONNX |
 | Coarse KNN search (prefix) | `VectorStore.search()` — EntityDB (browser) or Lancedb (device) |
 | Full-vector storage for rerank | `GraphStore.embeddingOntPut/Get()`, `embeddingInfPut/Get()` |
 | Belief node and edge persistence | `GraphStore.nodeUpsert()`, `edgeUpsert()`, `edgesFor()` |

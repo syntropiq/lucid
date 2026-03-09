@@ -8,17 +8,17 @@ A new model drops, a better vector store emerges, an operator runs a different i
 
 That is SUE's job. She looks out for the system and helps it make sense of the world regardless of which model or storage layer is currently under the hood.
 
-SUE wraps two categories of concern: **model contracts** (what generates embeddings and narration) and **substrate contracts** (where state is stored and how instances communicate). Both follow the same pattern: a TypeScript interface, one or more implementations, and a registry that activates the right implementation at boot.
+SUE wraps two categories of concern: **model interfaces** (what generates embeddings and narration) and **substrate interfaces** (where state is stored and how instances communicate). Both follow the same pattern: a TypeScript interface, one or more implementations, and a registry that activates the right implementation at boot.
 
 ---
 
-### 28.1 Two Roles, Two Contracts
+### 28.1 Two Roles, Two Interfaces
 
-LUCID uses exactly two model roles. Each has a contract. A model wrapper implements one contract. Nothing else.
+LUCID uses exactly two model roles. Each has an interface. A model wrapper implements one interface. Nothing else.
 
-**Ontic role.** Produces model-independent semantic coordinates. The architectural invariant: all Vortex nodes must use the same ontic model — that shared embedding space is what makes cross-scale routing coherent. The ontic contract is therefore the most stable thing in the system. Changing the ontic model requires re-embedding the entire belief graph and is a migration, not a config swap.
+**Ontic role.** Produces model-independent semantic coordinates. The architectural invariant: all Vortex nodes must use the same ontic model — that shared embedding space is what makes cross-scale routing coherent. The ontic interface is therefore the most stable thing in the system. Changing the ontic model requires re-embedding the entire belief graph and is a migration, not a config swap.
 
-**Inference role.** Processes information and generates narration. The inference contract is more layered: at minimum a model must generate text and provide hidden states for spectral monitoring. A model that exposes internal stream architecture (like LFM 2.5's dual conv/GQA streams) enables the full inner monitor. A model that does not exposes a single hidden-state stream and the inner monitor runs in degraded mode. Both are valid; the degraded case is documented, not hidden.
+**Inference role.** Processes information and generates narration. The inference interface is more layered: at minimum a model must generate text and provide hidden states for spectral monitoring. A model that exposes internal stream architecture (like LFM 2.5's dual conv/GQA streams) enables the full inner monitor. A model that does not exposes a single hidden-state stream and the inner monitor runs in degraded mode. Both are valid; the degraded case is documented, not hidden.
 
 ---
 
@@ -54,10 +54,10 @@ The `capabilities` object on each wrapper carries what the spectral monitor and 
 
 ---
 
-### 28.3 The Ontic Contract
+### 28.3 The Ontic Interface
 
 ```typescript
-interface OnticContract {
+interface OnticInterface {
   readonly role:              'ontic';
   readonly modelId:           string;
   readonly modelVersion:      string;
@@ -76,7 +76,7 @@ Every ontic wrapper must implement all members. Activation is handled by `sue.ac
 
 ```typescript
 // sue/wrappers/ontic/nomic-embed-v1.5.ts
-export const nomicEmbedV15: OnticContract = {
+export const nomicEmbedV15: OnticInterface = {
   role:               'ontic',
   modelId:            'nomic-embed-text-v1.5',
   modelVersion:       '1.5.0',
@@ -121,10 +121,10 @@ The spectral monitor (§11.3) consumes `SpectralSample` without knowing which mo
 
 ---
 
-### 28.5 The Inference Contract
+### 28.5 The Inference Interface
 
 ```typescript
-interface InferenceContract {
+interface InferenceInterface {
   readonly role:          'inference';
   readonly modelId:       string;
   readonly modelVersion:  string;
@@ -157,7 +157,7 @@ interface InferenceContract {
 
 ```typescript
 // sue/wrappers/inference/lfm-2.5.ts
-export const lfm25: InferenceContract = {
+export const lfm25: InferenceInterface = {
   role:          'inference',
   modelId:       'LFM-2.5-1.2B-Instruct',
   modelVersion:  '2.5.0',
@@ -209,7 +209,7 @@ export function makeGenericOnnxWrapper(config: {
   embeddingDim: number;
   contextWindow: number;
   hubId: string;
-}): InferenceContract {
+}): InferenceInterface {
   return {
     role:          'inference',
     modelId:       config.modelId,
@@ -252,21 +252,21 @@ The generic wrapper is what powers the browser instance (§27) when the operator
 
 ```typescript
 // sue/registry.ts
-import type { OnticContract } from './contracts/ontic';
-import type { InferenceContract } from './contracts/inference';
+import type { OnticInterface } from './interfaces/ontic';
+import type { InferenceInterface } from './interfaces/inference';
 
-const onticRegistry     = new Map<string, OnticContract>();
-const inferenceRegistry = new Map<string, InferenceContract>();
+const onticRegistry     = new Map<string, OnticInterface>();
+const inferenceRegistry = new Map<string, InferenceInterface>();
 
-let activeOntic:     OnticContract     | null = null;
-let activeInference: InferenceContract | null = null;
+let activeOntic:     OnticInterface     | null = null;
+let activeInference: InferenceInterface | null = null;
 
 export const sue = {
-  registerOntic(wrapper: OnticContract) {
+  registerOntic(wrapper: OnticInterface) {
     onticRegistry.set(`${wrapper.modelId}@${wrapper.modelVersion}`, wrapper);
   },
 
-  registerInference(wrapper: InferenceContract) {
+  registerInference(wrapper: InferenceInterface) {
     inferenceRegistry.set(`${wrapper.modelId}@${wrapper.modelVersion}`, wrapper);
   },
 
@@ -284,8 +284,8 @@ export const sue = {
     activeInference = wrapper;
   },
 
-  ontic():    OnticContract     { if (!activeOntic)    throw new Error('SUE: no active ontic model');    return activeOntic; },
-  inference(): InferenceContract { if (!activeInference) throw new Error('SUE: no active inference model'); return activeInference; },
+  ontic():    OnticInterface     { if (!activeOntic)    throw new Error('SUE: no active ontic model');    return activeOntic; },
+  inference(): InferenceInterface { if (!activeInference) throw new Error('SUE: no active inference model'); return activeInference; },
 };
 ```
 
@@ -374,9 +374,9 @@ Upgrading the ontic model is a heavier migration and is outside the scope of a r
 
 ---
 
-## 28.10 Substrate Contracts
+## 28.10 Substrate Interfaces
 
-Model contracts cover what thinks. Substrate contracts cover where state lives and how instances communicate. LUCID defines three substrate interfaces. The core feedback loops call only these interfaces — they do not import EntityDB, IndexedDB, or GunDB directly.
+Model interfaces cover what thinks. Substrate interfaces cover where state lives and how instances communicate. LUCID defines three substrate interfaces. The core feedback loops call only these interfaces — they do not import EntityDB, IndexedDB, or GunDB directly.
 
 ```typescript
 // Where vectors are stored and searched.
@@ -451,7 +451,7 @@ The choice of Lancedb for Device Lucy matters: EntityDB's brute-force cosine is 
 ### 28.12 Substrate Registry
 
 ```typescript
-// sue/registry.ts — extended for substrate contracts
+// sue/registry.ts — extended for substrate interfaces
 const vectorStoreRegistry = new Map<string, { ont: VectorStore; inf: VectorStore }>();
 let activeGraphStore: GraphStore | null = null;
 let activeMesh: Mesh | null = null;

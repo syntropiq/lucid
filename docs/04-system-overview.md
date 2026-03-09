@@ -10,8 +10,8 @@ The LLM remains stateless at the model level; statefulness is provided entirely 
 
 LUCID v3.5 is built on three portable abstractions:
 
-- **SUE contracts** (§28) — TypeScript interfaces that wrap model and substrate concerns. Core feedback loops call only these interfaces; they do not import EntityDB, IndexedDB, or GunDB directly.
-- **GraphStoreContract** (§28.10) — unified home for belief nodes, edges, centroids, AWE corpus, spectral state, and the sync log.
+- **SUE interfaces** (§28) — TypeScript interfaces that wrap model and substrate concerns. Core feedback loops call only these interfaces; they do not import EntityDB, IndexedDB, or GunDB directly.
+- **GraphStore** (§28.10) — unified home for belief nodes, edges, centroids, AWE corpus, spectral state, and the sync log.
 - **GunMesh** (§29) — wide sync transport, SEA identity anchor, DAM/HAM/AXE connection layer, and Vortex semantic routing across instantiations.
 
 **No sessions.** There is no session concept. There is continuous persona state, punctuated by consolidation phases triggered by geometric drift detected in the CfC hidden state dynamics, and interrupted by operator-facing turns that the continuous process pauses to serve.
@@ -36,7 +36,7 @@ Lucy operates in one of two cap states at any time.
 | Mesh | GunMesh (GunDB + DAM/HAM/AXE) | Wide opportunistic sync, peer discovery, Vortex semantic routing |
 | Ontic model | nomic-embed-text-v1.5 (transformers.js ONNX) | Semantic embedding, Matryoshka prefix hierarchy (768 → 128 for routing) |
 | Inference model | LFM 2.5 / generic ONNX (via SUE wrapper) | Narration, hidden state extraction for spectral monitoring |
-| SUE Registry | `sue/registry.ts` | Model and substrate contract activation; core loops call only SUE interfaces |
+| SUE Registry | `sue/registry.ts` | Model and substrate interface activation; core loops call only SUE interfaces |
 | Vector store — browser | EntityDB (`lucy_ont`, `lucy_inf`) | Coarse KNN on 128-dim Matryoshka prefix; brute-force cosine at personal scale |
 | Vector store — device | Lancedb | HNSW on 256-dim prefix; scales to full accumulated graph |
 | Graph store — browser | IndexedDB typed wrapper | Belief nodes/edges, centroids, AWE corpus, spectral state, sync log |
