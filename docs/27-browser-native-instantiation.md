@@ -1,10 +1,10 @@
-[← §26 References](26-references.md) | [Index](../README.md) | [§28 The Synaptic Utility Engine →](28-synaptic-utility-engine.md)
+[← §26 References](26-references.md) | [Index](../README.md) | [§28 The User Specified Engine →](28-user-specified-engine.md)
 
 ---
 
 ## 27. Browser-Native Instantiation
 
-The browser is not a cut-down version of LUCID. It is one locus of a multiply conscious entity. The full belief graph, the full AWE corpus, the full centroid history — everything is there, scoped to what has been experienced from this particular vantage point, and continuously reconciling with what the same entity has experienced everywhere else.
+The browser is not a cut-down version of LUCID. It is one locus of a multifocal entity. The full belief graph, the full AWE corpus, the full centroid history — everything is there, scoped to what has been experienced from this particular vantage point, and continuously reconciling with what the same entity has experienced everywhere else.
 
 This section describes the browser instantiation specifically. The broader deployment model — how browser, device, and gateway Lucys relate to each other — is §29.
 
@@ -18,7 +18,7 @@ This section describes the browser instantiation specifically. The broader deplo
 | Belief graph + AWE + local state | IndexedDB via typed wrapper — all rich schema, high-churn structures |
 | Mesh + wide sync | GunDB over WebRTC/WebSockets — the nervous system between instances |
 | Embeddings | transformers.js — nomic-embed-text-v1.5 (ontic), operator-supplied ONNX (inference) |
-| Model interfaces | SUE (§28) — same OnticInterface / InferenceInterface, browser implementations |
+| Model interfaces | USE (§28) — same OnticInterface / InferenceInterface, browser implementations |
 | Background processing | Web Workers — Embed Worker, Inference Worker, CfC Worker |
 
 No server required. No WASM database. No libp2p. The browser instance is self-contained and participates in the wider mesh as a peer.
@@ -43,7 +43,7 @@ const ontStore = new EntityDB({
 const infStore = new EntityDB({
   name: 'lucy_inf',
   model: OPERATOR_MODEL_ID,
-  dimensions: INFERENCE_DIM,  // from SUE registry
+  dimensions: INFERENCE_DIM,  // from USE registry
 });
 ```
 
@@ -97,9 +97,9 @@ Three Web Workers. Each is isolated; all state lives in IndexedDB/EntityDB, not 
 └────────┘  └──────────────┘  └──────────────┘
 ```
 
-**Embed Worker.** Subscribes to unindexed nodes via BroadcastChannel. Calls `sue.ontic().embed(content)` to get the full 768-dim vector, then writes it in two places: the 128-dim prefix goes to `sue.ont().add()` (EntityDB `lucy_ont` — fast coarse search), and the full 768-dim vector goes to `sue.graph().embeddingOntPut()` (GraphStore — used for two-phase re-ranking, §28.13). Marks node indexed. Posts `CENTROID_DIRTY` to the CfC Worker.
+**Embed Worker.** Subscribes to unindexed nodes via BroadcastChannel. Calls `use.ontic().embed(content)` to get the full 768-dim vector, then writes it in two places: the 128-dim prefix goes to `use.ont().add()` (EntityDB `lucy_ont` — fast coarse search), and the full 768-dim vector goes to `use.graph().embeddingOntPut()` (GraphStore — used for two-phase re-ranking, §28.13). Marks node indexed. Posts `CENTROID_DIRTY` to the CfC Worker.
 
-**Inference Worker.** Triggered by new user turns via BroadcastChannel. Assembles the context package in TypeScript (last N turns from IndexedDB + top-K KNN from EntityDB). Calls `sue.inference().generate()`, writes response turn and narration belief node to IndexedDB, writes spectral sample. All downstream work (AWE chain, sync log entry) is triggered by the IndexedDB write, not by the worker.
+**Inference Worker.** Triggered by new user turns via BroadcastChannel. Assembles the context package in TypeScript (last N turns from IndexedDB + top-K KNN from EntityDB). Calls `use.inference().generate()`, writes response turn and narration belief node to IndexedDB, writes spectral sample. All downstream work (AWE chain, sync log entry) is triggered by the IndexedDB write, not by the worker.
 
 **CfC Worker.** Subscribes to `CENTROID_DIRTY` messages. Reads current centroid and new embedding from IndexedDB/EntityDB. Applies the provenance-weighted running average for `C_o`, applies the CfC ODE step for `C_w`. Writes updated centroid to IndexedDB. Checks orbital health condition. If `orbital_health = false`, posts injection request back to main thread.
 
@@ -175,7 +175,7 @@ function cachePeerCentroid(peerId: string, c_o: Float32Array) {
 
 // Advertise local C_o to the mesh (called by CfC Worker after every centroid update)
 async function advertiseCentroid() {
-  const { c_o } = await sue.graph().centroidGet('self');
+  const { c_o } = await use.graph().centroidGet('self');
   localBits = binarize(c_o, 128);   // recompute local bits on update
   mind.get('instances').get(INSTANCE_ID).get('centroid').put({
     c_o:        Array.from(c_o),
@@ -207,7 +207,7 @@ When a work packet arrives and the accept/forward decision needs precision (not 
 const entry = peerCache.get(senderId);
 const precise = entry ? cosineSimilarity(localCentroidFull, entry.full) : 0;
 if (precise > ACCEPT_THRESHOLD) {
-  await sue.graph().nodeUpsert(packet.beliefNode);
+  await use.graph().nodeUpsert(packet.beliefNode);
 } else {
   forwardToHighestScoringPeer(packet);
 }
@@ -238,4 +238,4 @@ The browser instance is not degraded. It is fully inhabited. The absences are sc
 
 ---
 
-[← §26 References](26-references.md) | [Index](../README.md) | [§28 The Synaptic Utility Engine →](28-synaptic-utility-engine.md)
+[← §26 References](26-references.md) | [Index](../README.md) | [§28 The User Specified Engine →](28-user-specified-engine.md)

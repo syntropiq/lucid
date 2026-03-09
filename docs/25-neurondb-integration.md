@@ -2,11 +2,11 @@
 
 ---
 
-## 25. SUE Substrate Boundaries
+## 25. USE Substrate Boundaries
 
-This section documents the explicit boundary between what LUCID delegates to SUE substrate implementations and what remains under LUCID's semantic ownership. The principle is the same regardless of which substrate is active: substrate implementations handle storage, retrieval, and transport mechanics; LUCID owns all semantic interpretation.
+This section documents the explicit boundary between what LUCID delegates to USE substrate implementations and what remains under LUCID's semantic ownership. The principle is the same regardless of which substrate is active: substrate implementations handle storage, retrieval, and transport mechanics; LUCID owns all semantic interpretation.
 
-### 25.1 Delegation to SUE Substrates
+### 25.1 Delegation to USE Substrates
 
 | Capability | Substrate implementation |
 |---|---|
@@ -51,9 +51,9 @@ The following capabilities remain under LUCID's semantic ownership regardless of
 
 The substrate layer does not drive the operational loop — LUCID's workers do.
 
-**Embed Worker:** Listens for `NEW_NODE` broadcasts. Calls `sue.ontic().embed()` and `sue.inference()` to generate embeddings. Writes prefix to `sue.ont()` (VectorStore) and full vector to `sue.graph()` (GraphStore). Upserts the node with updated `index_state`. Broadcasts `NODE_INDEXED`.
+**Embed Worker:** Listens for `NEW_NODE` broadcasts. Calls `use.ontic().embed()` and `use.inference()` to generate embeddings. Writes prefix to `use.ont()` (VectorStore) and full vector to `use.graph()` (GraphStore). Upserts the node with updated `index_state`. Broadcasts `NODE_INDEXED`.
 
-**Inference Worker:** Listens for `NEW_TURN` broadcasts. Assembles context from the GraphStore. Calls `sue.inference().generate()` and `spectralSample()`. Writes narration node, AWE entry, and sync log event. Broadcasts `TURNS_UPDATED`.
+**Inference Worker:** Listens for `NEW_TURN` broadcasts. Assembles context from the GraphStore. Calls `use.inference().generate()` and `spectralSample()`. Writes narration node, AWE entry, and sync log event. Broadcasts `TURNS_UPDATED`.
 
 **CfC Worker:** Listens for `NODE_INDEXED` and `CENTROID_DIRTY`. Runs the consolidation pass (affinity edges, integration promotion, centroid update, orbital health check). Broadcasts `HEALTH_UPDATED` or `INJECT_REQUEST` as needed.
 

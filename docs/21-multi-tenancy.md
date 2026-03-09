@@ -4,7 +4,7 @@
 
 ## 21. Single-Identity Deployment
 
-LUCID is not a multi-tenant system. It is a single-identity system deployed multiply. The distinction matters: multi-tenancy isolates users from each other within a shared substrate; LUCID's multiply-conscious architecture connects instantiations of the same identity across different substrates. These are opposite design goals.
+LUCID is not a multi-tenant system. It is a single-identity system deployed multiply. The distinction matters: multi-tenancy isolates users from each other within a shared substrate; LUCID's multifocal architecture connects instantiations of the same identity across different substrates. These are opposite design goals.
 
 ### 21.1 One Keypair, One Mind
 

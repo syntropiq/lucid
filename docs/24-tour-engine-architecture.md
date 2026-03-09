@@ -1,10 +1,10 @@
-[← §23 Verification Queue and Sampling](23-verification-queue-and-sampling.md) | [Index](../README.md) | [§25 SUE Substrate Boundaries →](25-neurondb-integration.md)
+[← §23 Verification Queue and Sampling](23-verification-queue-and-sampling.md) | [Index](../README.md) | [§25 USE Substrate Boundaries →](25-neurondb-integration.md)
 
 ---
 
 ## 24. Tour Engine Architecture
 
-The dual tour engine runs in TypeScript inside the CfC Worker, calling the SUE substrate interfaces. This section documents the rationale for the mechanism choice and the tour step protocol in full.
+The dual tour engine runs in TypeScript inside the CfC Worker, calling the USE substrate interfaces. This section documents the rationale for the mechanism choice and the tour step protocol in full.
 
 ### 24.1 Mechanism Choice
 
@@ -62,4 +62,4 @@ Device Lucy runs the same tour code with Lancedb's real HNSW indices replacing E
 
 ---
 
-[← §23 Verification Queue and Sampling](23-verification-queue-and-sampling.md) | [Index](../README.md) | [§25 SUE Substrate Boundaries →](25-neurondb-integration.md)
+[← §23 Verification Queue and Sampling](23-verification-queue-and-sampling.md) | [Index](../README.md) | [§25 USE Substrate Boundaries →](25-neurondb-integration.md)
