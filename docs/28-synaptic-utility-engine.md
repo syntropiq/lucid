@@ -489,21 +489,33 @@ Upgrading the ontic model is a heavier migration and is outside the scope of a r
 Model contracts cover what thinks. Substrate contracts cover where state lives and how instances communicate. LUCID defines three substrate interfaces. The core feedback loops call only these interfaces — they do not import EntityDB, IndexedDB, or GunDB directly.
 
 ```typescript
-// Where vectors are stored and searched
+// Where vectors are stored and searched.
+// Implementations store a PREFIX of the full embedding (e.g. 128-dim for browser,
+// 256-dim for device) for fast coarse search. The prefix dimension is a constructor
+// argument of the implementation, not part of this interface.
+// Full embeddings live in GraphStore alongside the node record and are used for
+// re-ranking after coarse search (§28.13).
 interface VectorStore {
-  add(id: string, vector: Float32Array, metadata?: Record<string, unknown>): Promise<void>;
-  search(query: Float32Array, k: number): Promise<Array<{ id: string; score: number }>>;
+  add(id: string, prefix: Float32Array, metadata?: Record<string, unknown>): Promise<void>;
+  search(queryPrefix: Float32Array, k: number): Promise<Array<{ id: string; score: number }>>;
   get(id: string): Promise<Float32Array | null>;
   delete(id: string): Promise<void>;
 }
 
-// Where the belief graph and all rich state lives
+// Where the belief graph and all rich state lives.
+// Full embeddings (ont + inf) are stored here alongside node records so that
+// two-phase re-ranking can fetch them without a separate vector store round-trip.
 interface GraphStore {
   nodeUpsert(node: BeliefNode): Promise<void>;
   nodeGet(id: string): Promise<BeliefNode | null>;
   nodeQuery(filter: Partial<BeliefNode>): Promise<BeliefNode[]>;
   edgeUpsert(edge: BeliefEdge): Promise<void>;
   edgesFor(nodeId: string, type?: EdgeType): Promise<BeliefEdge[]>;
+  // Full embedding storage — separate from the prefix in VectorStore
+  embeddingOntPut(nodeId: string, embedding: Float32Array): Promise<void>;
+  embeddingOntGet(nodeId: string): Promise<Float32Array | null>;
+  embeddingInfPut(nodeId: string, embedding: Float32Array): Promise<void>;
+  embeddingInfGet(nodeId: string): Promise<Float32Array | null>;
   centroidGet(id?: string): Promise<CentroidRecord>;
   centroidPut(record: CentroidRecord): Promise<void>;
   awePut(entry: AWEEntry): Promise<void>;
@@ -598,6 +610,127 @@ sue.registerSubstrate({
 ```
 
 Boot sequence for Device Lucy differs only in the substrate constructors — the rest of the boot sequence, every feedback loop, and all LUCID logic is identical.
+
+---
+
+### 28.13 MRL + HNSW Two-Phase Search
+
+nomic-embed-text-v1.5 is Matryoshka Representation Learning (MRL) trained. Its first N dimensions are a complete, self-consistent embedding at lower resolution — not a truncated accident but a deliberately trained coarse-to-fine hierarchy. HNSW is inherently coarse-to-fine (sparse upper layers → dense base layer). The match is exact. This section documents how LUCID exploits it.
+
+#### The two-phase pattern
+
+Every ontic KNN search runs in two phases:
+
+```
+Phase 1 — Coarse traversal (VectorStore)
+  query768 → truncate → query128
+  EntityDB / Lancedb HNSW traversal over 128-dim prefix vectors
+  → top-100 candidate IDs, ~10ms
+
+Phase 2 — Precise re-rank (GraphStore + utility)
+  fetch full 768-dim embeddings for 100 candidates from GraphStore
+  exact cosine against full query768
+  → final top-K, <1ms
+```
+
+The coarse search is fast because 128-dim vectors are 6× smaller than 768-dim, distance calculations are 6× cheaper, and the HNSW graph itself is 6× smaller in memory. The re-rank is cheap because it only operates on 100 candidates with exact arithmetic.
+
+Implemented as a single utility function that all search call sites use:
+
+```typescript
+// src/core/search.ts
+export async function twoPhaseSearch(
+  queryFull: Float32Array,
+  k:         number,
+  ont:       VectorStore,
+  graph:     GraphStore,
+  prefix:    number = 128,   // Matryoshka prefix dim; matches VectorStore construction
+): Promise<Array<{ id: string; score: number }>> {
+  // Phase 1: coarse search on prefix
+  const queryPrefix  = queryFull.slice(0, prefix);
+  const candidates   = await ont.search(queryPrefix, Math.max(k * 10, 100));
+
+  // Phase 2: fetch full embeddings and re-rank
+  const fullVectors  = await Promise.all(
+    candidates.map(c => graph.embeddingOntGet(c.id))
+  );
+  return candidates
+    .map((c, i) => ({
+      id:    c.id,
+      score: fullVectors[i] ? cosineSimilarity(queryFull, fullVectors[i]!) : c.score,
+    }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, k);
+}
+```
+
+Call sites (inference context assembly, tour navigation, affinity edge creation) all go through `twoPhaseSearch`. They pass the full 768-dim query vector; the function handles prefix truncation internally.
+
+#### What VectorStore implementations store
+
+| Implementation | Stored dimension | Index type |
+|---|---|---|
+| EntityDB (browser) | 128-dim prefix | Brute-force cosine — fast at personal scale |
+| Lancedb (device) | 256-dim prefix | HNSW — scales to full accumulated graph |
+
+The full 768-dim embedding is stored by the Embed Worker after generation:
+
+```typescript
+// Embed Worker — after sue.ontic().embed() returns full 768-dim vector
+const full   = await sue.ontic().embed(content);          // Float32Array(768)
+const prefix = full.slice(0, PREFIX_DIM);                 // Float32Array(128 or 256)
+
+await sue.ont().add(nodeId, prefix);                      // VectorStore: prefix only
+await sue.graph().embeddingOntPut(nodeId, full);          // GraphStore: full vector
+```
+
+This separation is deliberate: fast index stores small; precise store keeps large. Neither is the authority for the other.
+
+#### Binary quantization for AXE peer scoring
+
+Centroid-based peer routing (§27.6) runs on every connection priority update. Floating-point cosine over 128 dimensions is already fast; binarizing it makes it essentially free, which means AXE can re-score all peers on every centroid change without batching or throttling.
+
+```typescript
+// src/core/vector-utils.ts
+
+/** Binarize the first `dims` elements of a float vector. */
+export function binarize(vec: Float32Array, dims: number = 128): Uint8Array {
+  const out = new Uint8Array(Math.ceil(dims / 8));
+  for (let i = 0; i < dims; i++) {
+    if (vec[i] > 0) out[i >> 3] |= (1 << (i & 7));
+  }
+  return out;
+}
+
+/** Hamming similarity (0–1, higher = more similar). */
+export function hammingScore(a: Uint8Array, b: Uint8Array): number {
+  let matches = 0;
+  for (let i = 0; i < a.length; i++) {
+    // popcount of ~XOR: count bits that agree
+    matches += popcount(~(a[i] ^ b[i]) & 0xff);
+  }
+  return matches / (a.length * 8);
+}
+
+function popcount(x: number): number {
+  x = x - ((x >> 1) & 0x55555555);
+  x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+  return (((x + (x >> 4)) & 0x0f0f0f0f) * 0x01010101) >> 24;
+}
+```
+
+The peer centroid cache stores two representations per peer:
+
+```typescript
+interface PeerCentroidEntry {
+  full:  Float32Array;  // 768-dim — used for precise work-packet routing decisions
+  bits:  Uint8Array;    // 16 bytes (128-dim binarized) — used for AXE connection scoring
+}
+```
+
+AXE scoring uses `hammingScore(local.bits, peer.bits)`. When a work packet arrives and the accept/forward decision needs precision, it uses `cosineSimilarity(local.full, peer.full)`. Fast screen, precise confirm — the same two-phase logic as the belief graph search, applied to peer routing.
+
+The binarized centroid is computed once when a peer's `c_o` is received and cached. It is recomputed only when the peer advertises a new centroid. Local `bits` are recomputed when the CfC Worker updates the local `c_o`. Cost: one binarization per centroid update, amortised across every routing decision until the next update.
 
 ---
 
