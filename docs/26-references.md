@@ -1,8 +1,8 @@
-[← §24 NeuronDB Integration](24-neurondb-integration.md) | [Index](../README.md)
+[← §25 NeuronDB Integration](25-neurondb-integration.md) | [Index](../README.md)
 
 ---
 
-## 25. References
+## 26. References
 
 [1] Marks, S., et al. (2026). The Persona Selection Model: Why AI Assistants Might Behave Like Humans. *Anthropic Alignment Science Blog*.
 
@@ -18,6 +18,16 @@
 
 [7] Qiu, L., Sha, F., Allen, K., Kim, Y., Linzen, T., & van Steenkiste, S. (2026). Bayesian teaching enables probabilistic reasoning in large language models. *Nature Communications*, 17, 1238. https://doi.org/10.1038/s41467-025-67998-6
 
+[8] Adobe Research. (2024). Dialectics for artificial intelligence. *arXiv:2512.17373*.
+
+[9] VORTEX: Verifiable Ontic Routing Through Entangled eXchanges. Semantic Wave Routing for Distributed Reasoning over libp2p Meshes. Version 4.0, March 2026.
+
+[10] Popper, K.R. (1945). *The Open Society and Its Enemies*. Routledge, London.
+
 ---
 
-[← §24 NeuronDB Integration](24-neurondb-integration.md) | [Index](../README.md)
+*The self is not in the weights. It is not in the database. It is not in the mesh. It is in the movement between them.*
+
+---
+
+[← §25 NeuronDB Integration](25-neurondb-integration.md) | [Index](../README.md)
