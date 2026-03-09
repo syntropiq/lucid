@@ -10,16 +10,17 @@ Each deployment is a private, isolated persona instance. Belief contamination, i
 
 **Custodial relationship.** The operator is the custodian of the persona instance, not its owner.
 
-Vortex participation is a per-instance operator configuration. Participation does not affect instance isolation. The bilateral AWE records are per-instance. No cross-instance data sharing occurs through the Vortex layer — only the ontic centroid advertisement is externally visible, and only to nodes that receive it via GossipSub.
+Vortex participation is a per-instance operator configuration. Participation does not affect instance isolation. The bilateral AWE records are per-instance. No cross-instance data sharing occurs through the Vortex layer — only the ontic centroid advertisement is externally visible, and only to nodes that receive it via the GunMesh.
 
 ### 16.2 Deployment Configurations
 
 | Configuration | Description | Cap Config |
 |--------------|-------------|------------|
-| Local | Docker Compose entry point (full stack) | Local |
-| Hosted | One isolated PostgreSQL/NeuronDB instance per operator | Hosted |
+| Browser Lucy | Self-contained web page — IndexedDB + EntityDB + GunDB | Personal |
+| Device Lucy | Node.js daemon — Lancedb + SQLite + GunDB | Full |
+| Gateway Lucy | Proxy in front of AI gateway — intercepts, consults graph, controls forwarding | Delegated |
 
-Vortex participation adds: libp2p peer identity, GossipSub mesh membership, centroid advertisement broadcast.
+Vortex participation adds: GunMesh peer identity (SEA keypair), AXE connection scoring, centroid advertisement via Gun user namespace.
 
 ### 16.3 Persona Profiles
 
@@ -37,15 +38,15 @@ Vortex participation adds: libp2p peer identity, GossipSub mesh membership, cent
 ### 16.4 Persona Initialisation
 
 1. Load system prompt. System operates cap-off.
-2. Slice all corpus content into page nodes of up to `L_page ≈ 4096` tokens. Register in `lucid.content` and `lucid.belief_nodes` (`index_state = unindexed`).
-3. Run indexing workers to completion. Wait for `index_ratio = 1.0`.
-4. Run integration pass. Wait for `integration_ratio` to reach an acceptable threshold. The system does not proceed to cap training on an unintegrated graph. Affinity edge creation uses NeuronDB's native KNN graph-building functions over `lucid.node_embeddings_inf` and `lucid.node_embeddings_ont`, writing results into `lucid.belief_edges`.
+2. Slice all corpus content into page nodes of up to `L_page ≈ 4096` tokens. Write to the GraphStore via `sue.graph().nodeUpsert()` with `index_state: 'unindexed'`.
+3. Run the Embed Worker to completion. Wait for `index_ratio = 1.0`.
+4. Run the CfC Worker's integration pass. Wait for `integration_ratio` to reach an acceptable threshold. The system does not proceed to cap training on an unintegrated graph. Affinity edge creation uses `twoPhaseSearch` over the VectorStore (EntityDB/Lancedb), writing results into the GraphStore via `sue.graph().edgeUpsert()`.
 5. Run initial dual tours. Establish `φ_0` and `H̄_0`.
 6. Calibrate critique pipeline against baseline tour results.
-7. Route outputs through the calibrated critique pipeline. Build Self Library. Initialise `lucid.affective_corpus` with bootstrap entries at provenance weight 0.5. Establish spectral baselines in `lucid.spectral_monitor`. Initialise ACG continuous monitoring state.
+7. Route outputs through the calibrated critique pipeline. Build Self Library. Write AWE bootstrap entries to the GraphStore (`sue.graph().awePut()`) at provenance weight 0.5. Establish spectral baselines via `sue.graph().spectralPut()`. Initialise ACG continuous monitoring state.
 8. Train first Thinking Cap from bootstrap corpus.
 9. Fit first Thinking Cap. Transition to cap-on.
-10. If Vortex participation enabled: initialise libp2p peer identity. Begin GossipSub mesh membership. Begin ontic centroid advertisement. Vortex participation active.
+10. If Vortex participation enabled: initialise GunMesh with `LUCY_SEA_PAIR`. Authenticate Gun user namespace. Begin centroid advertisement via `mind.get('instances')`. AXE peer scoring active. Vortex participation active.
 11. System ready. Continuous processing loop begins. Infotactic navigation starts.
 
 ### 16.5 Embedding Models

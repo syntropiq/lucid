@@ -6,7 +6,7 @@
 
 ### 23.1 Sampling Model
 
-A global `shared_sampling_rate` (stored in `lucid.system_config`, suggested initial value 0.05) determines the fraction of items sampled per batch. Sampling selection runs at batch submission time. The sampling rate is global and applies to all sources equally.
+A global `shared_sampling_rate` (stored in operator configuration, suggested initial value 0.05) determines the fraction of items sampled per batch. Sampling selection runs at batch submission time. The sampling rate is global and applies to all sources equally.
 
 Vortex peer content bypasses the verification queue entirely — it enters through the peer provenance path and is subject to threat architecture assessment rather than batch sampling. The two paths are independent and do not interfere.
 

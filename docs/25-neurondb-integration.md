@@ -2,69 +2,72 @@
 
 ---
 
-## 25. NeuronDB Integration
+## 25. SUE Substrate Boundaries
 
-This section documents the explicit boundary between NeuronDB substrate and LUCID-owned logic, and specifies how NeuronDB's background workers integrate with the LUCID operational model.
+This section documents the explicit boundary between what LUCID delegates to SUE substrate implementations and what remains under LUCID's semantic ownership. The principle is the same regardless of which substrate is active: substrate implementations handle storage, retrieval, and transport mechanics; LUCID owns all semantic interpretation.
 
-### 25.1 Delegation to NeuronDB
+### 25.1 Delegation to SUE Substrates
 
-| Capability | NeuronDB mechanism |
-|-----------|-------------------|
-| Embedding generation | `embed_text(uri, model_name)` in-process ONNX |
-| HNSW index maintenance | `neurandefrag` worker |
-| Affinity edge candidate generation | HNSW kNN queries |
-| KNN graph building (dream cycle) | Native KNN graph analytic |
-| Centroid computation (clustering) | K-Means, centroid functions |
-| Dream cycle crystallisation (community detection) | `vgraph_community_detection` (Louvain) |
-| Crystallisation priority (merge survivors) | `vgraph_pagerank` |
-| Async job queue | `neuranq` worker |
-| Outlier/anomaly screening (pre-integration) | Z-score, IQR outlier detection over embedding neighbourhoods |
-| Monitoring | `vector_stats`, `index_health`, `tenant_quota_usage` views |
-| Multi-tenancy isolation | `tenant_quotas`, tenant-aware HNSW, RLS policies |
+| Capability | Substrate implementation |
+|---|---|
+| Ontic embedding generation | `OnticContract.embed()` — nomic-embed-text-v1.5 via transformers.js ONNX |
+| Inference embedding / hidden state extraction | `InferenceContract.generate()` + `spectralSample()` — LFM 2.5 or generic ONNX |
+| Coarse KNN search (prefix) | `VectorStore.search()` — EntityDB (browser) or Lancedb (device) |
+| Full-vector storage for rerank | `GraphStore.embeddingOntPut/Get()`, `embeddingInfPut/Get()` |
+| Belief node and edge persistence | `GraphStore.nodeUpsert()`, `edgeUpsert()`, `edgesFor()` |
+| Centroid persistence | `GraphStore.centroidPut/Get()` |
+| AWE and spectral record persistence | `GraphStore.awePut()`, `spectralPut()` |
+| Sync log durability | `GraphStore.syncLogAppend()`, `syncLogPending()` |
+| Wide sync transport | `Mesh.publish()`, `subscribe()` — GunDB with DAM/HAM |
+| Peer discovery and connection management | `Mesh.advertise()`, `observe()`, `peers()` — GunDB AXE |
+| HNSW index maintenance (device) | Lancedb internal — compaction and rebuild handled automatically |
+| Graph analytics (dream cycle) | `src/device/analytics.ts` — Louvain community detection, PageRank |
 
 ### 25.2 Retained in LUCID
 
-The following capabilities remain under LUCID's semantic ownership regardless of NeuronDB substrate:
+The following capabilities remain under LUCID's semantic ownership regardless of which substrate is active:
 
 | Capability | Why LUCID owns it |
-|-----------|------------------|
+|---|---|
 | Belief node schema, edges, centroids, cycles | Core domain model |
-| Provenance model and belief weight arithmetic | Semantic layer; NeuronDB has no concept of provenance |
+| Provenance model and belief weight arithmetic | Semantic layer; substrates have no concept of provenance |
 | Hebbian-Belief cost function (Definition 9.1) | LUCID-specific scoring; not a general-purpose metric |
 | CfC attractor semantics | Pinned `C_0`, liquid time-constant response curve, consolidation trigger logic, orbital trajectory analysis, contact record interpretation — all LUCID-specific interpretations of vector arithmetic primitives |
 | Dual tour protocol | Algorithm definition, overlap set `Ω`, injection signal, threat score decomposition |
 | Dream cycle sequence | Steps 1–7 and their ordering logic, including Step 4d affective reflection |
 | Thinking Cap lifecycle | LoRA adapter generation, soft correction, cap rollback |
 | Inheritance corpus and Self Library | Judgment record and anomaly detection reference surface |
-| AWE layer | Affective chain generation (ingress/egress), mood gauge, affective valence, user react semantics, curiosity navigation, emotional memory, affective corpus, circadian texture, TripleDent Gum — all LUCID-specific; NeuronDB has no concept of affect |
-| Spectral monitoring | Dual-stream FFT, cross-stream correlation, DC dominance detection, orbital health condition, TripleDent Gum tier assessment — all LUCID-specific; NeuronDB has no concept of attentional state |
-| ACG continuous monitoring | Ingress/egress chain generation, conflict detection, context integration, affective assessment — all LUCID-specific; NeuronDB has no concept of continuous attentional monitoring |
-| Vortex peer layer | Peer mesh participation, centroid advertisement, bilateral contracts, swimming trigger — all LUCID-specific; NeuronDB has no concept of peer presence |
+| AWE layer | Affective chain generation (ingress/egress), mood gauge, affective valence, user react semantics, curiosity navigation, emotional memory, affective corpus, circadian texture, TripleDent Gum — all LUCID-specific; substrates have no concept of affect |
+| Spectral monitoring | Dual-stream FFT, cross-stream correlation, DC dominance detection, orbital health condition, TripleDent Gum tier assessment — all LUCID-specific; substrates have no concept of attentional state |
+| ACG continuous monitoring | Ingress/egress chain generation, conflict detection, context integration, affective assessment — all LUCID-specific; substrates have no concept of continuous attentional monitoring |
+| Vortex peer layer | Peer mesh participation, centroid advertisement, bilateral contracts, swimming trigger — all LUCID-specific; substrates handle transport only |
 | Swimming mechanism | SWIM trigger condition, `∅_swim` broadcast, open receptivity processing, exit condition — LUCID-specific |
-| Network Hebbian equivalence | Interpretation of `C_o` as network Hebbian weight — LUCID-specific semantics on top of NeuronDB vector arithmetic |
+| Network Hebbian equivalence | Interpretation of `C_o` as network Hebbian weight — LUCID-specific semantics on top of substrate vector arithmetic |
 | Vortex agenda | Set of nodes flagged for peer contemplation, maintained by ACG — LUCID-specific |
 | Bilateral AWE contracts | Peer exchange chain storage, γ history, `[jellyfish]`/`[excellent]`/`[ack]` semantics — LUCID-specific |
+| Self-dialogue reconciliation | Divergence detection, dialogue protocol, reconciliation node creation (§29.4) — LUCID-specific |
 
-### 25.3 NeuronDB Background Worker Integration
+### 25.3 Worker and Runtime Responsibilities
 
-The four NeuronDB workers operate alongside LUCID's operational states without modification:
+The substrate layer does not drive the operational loop — LUCID's workers do.
 
-**neuranq:** LUCID event channels (`lucid_interrupt`, `lucid_judgment`, `lucid_consolidate`, `lucid_consolidation`, `lucid_drift`, `lucid_awe_flatline`, `lucid_orbital`, `lucid_vortex_agenda`, `lucid_swim`, `lucid_swim_exit`) become job types in `neuranq`. LUCID-owned handlers process each job type.
+**Embed Worker:** Listens for `NEW_NODE` broadcasts. Calls `sue.ontic().embed()` and `sue.inference()` to generate embeddings. Writes prefix to `sue.ont()` (VectorStore) and full vector to `sue.graph()` (GraphStore). Upserts the node with updated `index_state`. Broadcasts `NODE_INDEXED`.
 
-**neuranmon:** Operates transparently. HNSW search parameter tuning and cache optimisation improve tour performance without LUCID awareness.
+**Inference Worker:** Listens for `NEW_TURN` broadcasts. Assembles context from the GraphStore. Calls `sue.inference().generate()` and `spectralSample()`. Writes narration node, AWE entry, and sync log event. Broadcasts `TURNS_UPDATED`.
 
-**neurandefrag:** Operates transparently. Index compaction and rebuild scheduling handled automatically.
+**CfC Worker:** Listens for `NODE_INDEXED` and `CENTROID_DIRTY`. Runs the consolidation pass (affinity edges, integration promotion, centroid update, orbital health check). Broadcasts `HEALTH_UPDATED` or `INJECT_REQUEST` as needed.
 
-**neuranllm:** The question of whether `neuranllm` can absorb NeuronAgent's LLM job dispatch, or whether NeuronAgent's orchestration requirements (context assembly, tool dispatch, cycle state management, ACG continuous monitoring) require it to remain external, is deferred pending instrumentation from a live deployment.
+**Device Lucy daemon:** Runs the full dream cycle (§12), graph analytics, and HNSW maintenance via Lancedb. Publishes cap deltas and consolidated state back into the mesh.
 
-### 25.4 Note on vgraph
+### 25.4 Analytics at Device Scale
 
-NeuronDB's `vgraph` type (adjacency list with BFS/DFS/PageRank/community detection) is not used for real-time touring. Node indices in `vgraph` are positional integers; LUCID nodes are identified by `bigint` row IDs. Edge weights are not stored in the `vgraph` structure, and the Hebbian-Belief cost function depends on per-edge runtime state that changes between cycles. `vgraph` is suitable for batch analytics during dream cycles:
+The graph analytics capabilities that NeuronDB's `vgraph` provided are reproduced in `src/device/analytics.ts` for Device Lucy:
 
-- `vgraph_community_detection` (Louvain) identifies mergeable belief node clusters
-- `vgraph_pagerank` identifies high-centrality nodes as merge survivors during crystallisation
+- **Louvain community detection** over the belief edge graph identifies mergeable belief node clusters for crystallisation.
+- **PageRank** over the full graph identifies high-centrality nodes as merge survivors.
+- **AWE walk log** — including Vortex peer exchange walks — provides seed material for community detection during affective reflection: nodes that appear as associative candidates across multiple infotactic walks form natural community seeds because they are nodes the system keeps finding itself drawn back to from different starting positions.
 
-The AWE walk log — now including Vortex peer exchange walks — provides additional seed material for `vgraph` community detection during affective reflection: nodes that appear as associative candidates across multiple infotactic walks, including walks seeded from peer exchange nodes, form natural community seeds because they are nodes the system keeps finding itself drawn back to from different starting positions.
+These analytics run only on Device Lucy, where Lancedb and SQLite scale to the full accumulated graph. Results are published to the mesh as cap deltas (§12) so Browser Lucy receives updated reasoning patterns without running the full analytics pass itself.
 
 ---
 

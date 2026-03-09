@@ -22,42 +22,11 @@ LUCID uses exactly two model roles. Each has a contract. A model wrapper impleme
 
 ---
 
-### 28.2 The SUE Registry Table
+### 28.2 The SUE Registry
 
-```sql
-CREATE SCHEMA IF NOT EXISTS sue;
+The registry is pure TypeScript — two `Map` instances (one per model role) and two active-wrapper references (see §28.6). There is no database table for model registration. Wrapper activation is synchronous: a wrapper is registered, then set as active. The active wrapper is the source of truth until replaced.
 
-CREATE TABLE sue.model_registry (
-  model_id          TEXT    NOT NULL,
-  model_version     TEXT    NOT NULL,
-  role              TEXT    NOT NULL CHECK (role IN ('ontic', 'inference')),
-  embedding_dim     INTEGER NOT NULL,
-  context_window    INTEGER,          -- tokens; null for ontic
-  layer_count       INTEGER,          -- null for ontic or unknown
-  capabilities      JSONB   NOT NULL DEFAULT '{}',
-  wrapper_config    JSONB   NOT NULL DEFAULT '{}',
-  is_active         BOOLEAN NOT NULL DEFAULT false,
-  activated_at      TIMESTAMPTZ,
-  PRIMARY KEY (model_id, model_version)
-);
-
--- At most one active model per role at any time
-CREATE UNIQUE INDEX sue_one_active_per_role
-  ON sue.model_registry (role)
-  WHERE is_active = true;
-
-CREATE TABLE sue.activation_log (
-  id               BIGSERIAL PRIMARY KEY,
-  model_id         TEXT    NOT NULL,
-  model_version    TEXT    NOT NULL,
-  role             TEXT    NOT NULL,
-  activated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
-  deactivated_at   TIMESTAMPTZ,
-  activation_note  TEXT
-);
-```
-
-The `capabilities` JSONB column carries what the spectral monitor and other consumers need to know without model-specific branching in the calling code:
+The `capabilities` object on each wrapper carries what the spectral monitor and other consumers need to know without model-specific branching in the calling code:
 
 ```jsonc
 // LFM 2.5 inference wrapper capabilities
@@ -94,17 +63,14 @@ interface OnticContract {
   readonly modelVersion:      string;
   readonly embeddingDim:      number;
   readonly matryoshkaPrefixes: number[];  // [] if not Matryoshka-trained
+  readonly capabilities:      Record<string, unknown>;
 
   /** Embed text into the model-independent semantic space. */
   embed(text: string): Promise<Float32Array>;
-
-  /** SQL fragment that registers this model and ensures the embedding
-   *  column has the correct dimension. Applied at activation time. */
-  setupSQL(): string;
 }
 ```
 
-Every ontic wrapper must implement all five members. The `setupSQL()` return value is executed inside a transaction when the wrapper is activated. For a new ontic model with a different embedding dimension it must migrate `lucid.node_embeddings_ont` accordingly — SUE does not perform that migration automatically; the wrapper author writes the SQL and owns the consequences.
+Every ontic wrapper must implement all members. Activation is handled by `sue.activateOntic()` which sets the wrapper as the active ontic and stores its metadata in the SUE registry Map. For a new ontic model with a different embedding dimension, the VectorStore implementation must be reconfigured (different prefix dimension constructor argument) — the wrapper author documents the migration and the collection must be rebuilt.
 
 **Default ontic wrapper: `nomic-embed-text-v1.5`**
 
@@ -116,28 +82,17 @@ export const nomicEmbedV15: OnticContract = {
   modelVersion:       '1.5.0',
   embeddingDim:       768,
   matryoshkaPrefixes: [768, 512, 256, 128, 64],
+  capabilities: {
+    matryoshka:          true,
+    matryoshkaPrefixes:  [768, 512, 256, 128, 64],
+    hubId:               'Xenova/nomic-embed-text-v1.5',
+    quantized:           true,
+  },
 
   async embed(text) {
     const output = await embedder(text, { pooling: 'mean', normalize: true });
     return output.data as Float32Array;
   },
-
-  setupSQL: () => `
-    INSERT INTO sue.model_registry
-      (model_id, model_version, role, embedding_dim, capabilities, wrapper_config, is_active, activated_at)
-    VALUES (
-      'nomic-embed-text-v1.5', '1.5.0', 'ontic', 768,
-      '{"matryoshka": true, "matryoshka_prefixes": [768, 512, 256, 128, 64]}',
-      '{"quantized": true, "hub_id": "Xenova/nomic-embed-text-v1.5"}',
-      true, now()
-    )
-    ON CONFLICT (model_id, model_version) DO UPDATE
-      SET is_active = true, activated_at = now();
-
-    -- Ensure column exists at correct dimension
-    ALTER TABLE lucid.node_embeddings_ont
-      ADD COLUMN IF NOT EXISTS embedding vector(768);
-  `,
 };
 ```
 
@@ -162,7 +117,7 @@ interface SpectralSample {
 }
 ```
 
-The spectral monitor (§11.3) consumes `SpectralSample` without knowing which model produced it. When `streams.length === 1` the inner monitor runs in single-stream mode — no cross-stream correlation diagnostic is possible. This is logged in `sue.activation_log` as a capability note and reflected in the `capabilities` column of the registry. It is not an error; it is the honest state of what the current model provides.
+The spectral monitor (§11.3) consumes `SpectralSample` without knowing which model produced it. When `streams.length === 1` the inner monitor runs in single-stream mode — no cross-stream correlation diagnostic is possible. This is reflected in the active wrapper's `capabilities.dualStream` flag. It is not an error; it is the honest state of what the current model provides.
 
 ---
 
@@ -178,6 +133,9 @@ interface InferenceContract {
   readonly capabilities: {
     convTensors:  boolean;
     dualStream:   boolean;
+    streamLabels: string[];
+    hubId:        string;
+    quantized:    boolean;
   };
 
   /** Generate a narration response from the assembled context package. */
@@ -190,10 +148,6 @@ interface InferenceContract {
    * Called once per generate() invocation, immediately after generation.
    */
   spectralSample(prompt: string): Promise<SpectralSample>;
-
-  /** SQL fragment to register this model and provision the inference
-   *  embedding column at the correct dimension. */
-  setupSQL(): string;
 }
 ```
 
@@ -209,7 +163,13 @@ export const lfm25: InferenceContract = {
   modelVersion:  '2.5.0',
   embeddingDim:  2048,
   contextWindow: 4096,
-  capabilities:  { convTensors: true, dualStream: true },
+  capabilities:  {
+    convTensors:  true,
+    dualStream:   true,
+    streamLabels: ['conv', 'gqa'],
+    hubId:        'LiquidAI/LFM-2.5-1.2B-Instruct',
+    quantized:    true,
+  },
 
   async generate(prompt) {
     // Runs ONNX session with named outputs for past_conv_tensors and hidden_states.
@@ -234,26 +194,6 @@ export const lfm25: InferenceContract = {
       crossCorrelation: pearson(convStream, gqaStream),
     };
   },
-
-  setupSQL: () => `
-    INSERT INTO sue.model_registry
-      (model_id, model_version, role, embedding_dim, context_window, layer_count,
-       capabilities, wrapper_config, is_active, activated_at)
-    VALUES (
-      'LFM-2.5-1.2B-Instruct', '2.5.0', 'inference', 2048, 4096, 16,
-      '{"conv_tensors": true, "dual_stream": true,
-        "conv_block_count": 10, "gqa_block_count": 6,
-        "stream_labels": ["conv", "gqa"]}',
-      '{"format": "onnx", "quantized": true,
-        "hub_id": "LiquidAI/LFM-2.5-1.2B-Instruct"}',
-      true, now()
-    )
-    ON CONFLICT (model_id, model_version) DO UPDATE
-      SET is_active = true, activated_at = now();
-
-    ALTER TABLE lucid.node_embeddings_inf
-      ADD COLUMN IF NOT EXISTS embedding vector(2048);
-  `,
 };
 ```
 
@@ -276,7 +216,13 @@ export function makeGenericOnnxWrapper(config: {
     modelVersion:  config.modelVersion,
     embeddingDim:  config.embeddingDim,
     contextWindow: config.contextWindow,
-    capabilities:  { convTensors: false, dualStream: false },
+    capabilities:  {
+      convTensors:  false,
+      dualStream:   false,
+      streamLabels: ['hidden'],
+      hubId:        config.hubId,
+      quantized:    true,
+    },
 
     async generate(prompt) {
       const { text, hiddenStates } = await pipeline(prompt, {
@@ -294,29 +240,11 @@ export function makeGenericOnnxWrapper(config: {
         crossCorrelation: null,
       };
     },
-
-    setupSQL: () => `
-      INSERT INTO sue.model_registry
-        (model_id, model_version, role, embedding_dim, context_window,
-         capabilities, wrapper_config, is_active, activated_at)
-      VALUES (
-        '${config.modelId}', '${config.modelVersion}', 'inference',
-        ${config.embeddingDim}, ${config.contextWindow},
-        '{"conv_tensors": false, "dual_stream": false, "stream_labels": ["hidden"]}',
-        '{"format": "onnx", "quantized": true, "hub_id": "${config.hubId}"}',
-        true, now()
-      )
-      ON CONFLICT (model_id, model_version) DO UPDATE
-        SET is_active = true, activated_at = now();
-
-      ALTER TABLE lucid.node_embeddings_inf
-        ADD COLUMN IF NOT EXISTS embedding vector(${config.embeddingDim});
-    `,
   };
 }
 ```
 
-The generic wrapper is what powers the LUCID Lite browser instance (§27) when the operator has not supplied an LFM 2.5 blob. Smolm, Phi-mini, and any other transformers.js-compatible model all go through `makeGenericOnnxWrapper`. The single-stream inner monitor runs. The cross-stream correlation diagnostic is absent. §27.8 documents this as the expected degradation.
+The generic wrapper is what powers the browser instance (§27) when the operator has not supplied an LFM 2.5 blob. Smolm, Phi-mini, and any other transformers.js-compatible model all go through `makeGenericOnnxWrapper`. The single-stream inner monitor runs. The cross-stream correlation diagnostic is absent. §27.7 documents this as the expected capability scope of the browser instantiation.
 
 ---
 
@@ -327,10 +255,10 @@ The generic wrapper is what powers the LUCID Lite browser instance (§27) when t
 import type { OnticContract } from './contracts/ontic';
 import type { InferenceContract } from './contracts/inference';
 
-const onticRegistry   = new Map<string, OnticContract>();
+const onticRegistry     = new Map<string, OnticContract>();
 const inferenceRegistry = new Map<string, InferenceContract>();
 
-let activeOntic:    OnticContract    | null = null;
+let activeOntic:     OnticContract     | null = null;
 let activeInference: InferenceContract | null = null;
 
 export const sue = {
@@ -342,36 +270,22 @@ export const sue = {
     inferenceRegistry.set(`${wrapper.modelId}@${wrapper.modelVersion}`, wrapper);
   },
 
-  async activateOntic(db: PGlite, modelId: string, version: string) {
+  activateOntic(modelId: string, version: string) {
     const key = `${modelId}@${version}`;
     const wrapper = onticRegistry.get(key);
     if (!wrapper) throw new Error(`SUE: no ontic wrapper registered for ${key}`);
-    await db.exec(wrapper.setupSQL());
     activeOntic = wrapper;
   },
 
-  async activateInference(db: PGlite, modelId: string, version: string) {
+  activateInference(modelId: string, version: string) {
     const key = `${modelId}@${version}`;
     const wrapper = inferenceRegistry.get(key);
     if (!wrapper) throw new Error(`SUE: no inference wrapper registered for ${key}`);
-    await db.exec(wrapper.setupSQL());
     activeInference = wrapper;
   },
 
   ontic():    OnticContract     { if (!activeOntic)    throw new Error('SUE: no active ontic model');    return activeOntic; },
   inference(): InferenceContract { if (!activeInference) throw new Error('SUE: no active inference model'); return activeInference; },
-
-  /** Read the currently active wrappers from the database (for cross-process
-   *  or post-restart hydration). */
-  async hydrateFromDB(db: PGlite) {
-    const { rows } = await db.query<{
-      model_id: string; model_version: string; role: string;
-    }>(`SELECT model_id, model_version, role FROM sue.model_registry WHERE is_active = true`);
-    for (const row of rows) {
-      if (row.role === 'ontic')     await sue.activateOntic(db,    row.model_id, row.model_version);
-      if (row.role === 'inference') await sue.activateInference(db, row.model_id, row.model_version);
-    }
-  },
 };
 ```
 
@@ -383,89 +297,65 @@ The rest of the system calls `sue.ontic().embed()` and `sue.inference().generate
 
 The spectral monitoring write path (§11.3) reads the active wrapper's capabilities from the registry to determine which fields to populate:
 
-```sql
--- Function called after each generation step with the SpectralSample JSON
-CREATE OR REPLACE FUNCTION lucid.write_spectral_sample(
-  p_node_id         UUID,
-  p_streams         JSONB,   -- array of vectors, serialised from SpectralSample.streams
-  p_stream_labels   TEXT[],
-  p_cross_corr      FLOAT    -- null if dual_stream = false
-) RETURNS void AS $$
-DECLARE
-  v_caps JSONB;
-BEGIN
-  SELECT capabilities INTO v_caps
-  FROM sue.model_registry
-  WHERE role = 'inference' AND is_active = true;
+```typescript
+// Inference Worker — called immediately after sue.inference().generate()
+async function writeSpectralSample(nodeId: string, sample: SpectralSample): Promise<void> {
+  const caps = sue.inference().capabilities;
 
-  INSERT INTO lucid.spectral_monitor (
-    node_id,
-    inner_streams,
-    stream_labels,
-    cross_stream_correlation,
-    dual_stream_available,
-    sampled_at
-  ) VALUES (
-    p_node_id,
-    p_streams,
-    p_stream_labels,
-    p_cross_corr,
-    (v_caps->>'dual_stream')::boolean,
-    now()
-  )
-  ON CONFLICT (node_id) DO UPDATE SET
-    inner_streams            = EXCLUDED.inner_streams,
-    stream_labels            = EXCLUDED.stream_labels,
-    cross_stream_correlation = EXCLUDED.cross_stream_correlation,
-    dual_stream_available    = EXCLUDED.dual_stream_available,
-    sampled_at               = EXCLUDED.sampled_at;
-END;
-$$ LANGUAGE plpgsql;
+  await sue.graph().spectralPut({
+    nodeId,
+    streams:            sample.streams,
+    streamLabels:       sample.streamLabels,
+    crossCorrelation:   sample.crossCorrelation,
+    dualStreamAvailable: caps.dualStream,
+    sampledAt:          Date.now(),
+  });
+}
 ```
 
-When `dual_stream_available = false` the interiority spiral detection query (§11.3) skips the cross-stream correlation test and emits a monitoring note that the diagnostic is unavailable for the current model. The outer monitor (affective chain FFT) still runs at full resolution regardless of model. Only the inner monitor is degraded.
+When `dualStreamAvailable = false` the interiority spiral detection logic (§11.3) skips the cross-stream correlation test and notes that the diagnostic is unavailable for the current model. The outer monitor (affective chain FFT) still runs at full resolution regardless of model. Only the inner monitor is degraded.
 
 ---
 
 ### 28.8 Activation at Boot
 
-The initialisation sequence (§16.4 for full stack, §27.2 for Lite) now includes SUE activation:
+The initialisation sequence (§16.4) includes SUE model activation:
 
 ```typescript
-// Full stack boot (replaces bare model loading in §16.4)
-import { sue }      from './sue/registry';
+// Device Lucy boot (LFM 2.5 inference model)
+import { sue }           from './sue/registry';
 import { nomicEmbedV15 } from './sue/wrappers/ontic/nomic-embed-v1.5';
-import { lfm25 }    from './sue/wrappers/inference/lfm-2.5';
+import { lfm25 }         from './sue/wrappers/inference/lfm-2.5';
 
 sue.registerOntic(nomicEmbedV15);
 sue.registerInference(lfm25);
 
-await sue.activateOntic(db,    'nomic-embed-text-v1.5', '1.5.0');
-await sue.activateInference(db, 'LFM-2.5-1.2B-Instruct', '2.5.0');
+sue.activateOntic('nomic-embed-text-v1.5', '1.5.0');
+sue.activateInference('LFM-2.5-1.2B-Instruct', '2.5.0');
 
 // Embed Worker now calls sue.ontic().embed() — not a named model import
 // Inference Worker now calls sue.inference().generate() and .spectralSample()
 ```
 
 ```typescript
-// Lite boot (browser — operator-supplied or default generic wrapper)
+// Browser Lucy boot (generic ONNX wrapper — operator-supplied or default)
 import { makeGenericOnnxWrapper } from './sue/wrappers/inference/generic-onnx';
 
 const inferenceWrapper = OPERATOR_MODEL_CONFIG
   ? makeGenericOnnxWrapper(OPERATOR_MODEL_CONFIG)
   : makeGenericOnnxWrapper({
-      modelId:      'smollm-135m-instruct',
-      modelVersion: '1.0.0',
-      embeddingDim: 576,
+      modelId:       'smollm-135m-instruct',
+      modelVersion:  '1.0.0',
+      embeddingDim:  576,
       contextWindow: 2048,
-      hubId:        'HuggingFaceTB/SmolLM-135M-Instruct',
+      hubId:         'HuggingFaceTB/SmolLM-135M-Instruct',
     });
 
 sue.registerOntic(nomicEmbedV15);
 sue.registerInference(inferenceWrapper);
 
-await sue.activateOntic(db,    'nomic-embed-text-v1.5', '1.5.0');
-await sue.activateInference(db, inferenceWrapper.modelId, inferenceWrapper.modelVersion);
+sue.activateOntic('nomic-embed-text-v1.5', '1.5.0');
+sue.activateInference(inferenceWrapper.modelId, inferenceWrapper.modelVersion);
 ```
 
 ---
@@ -476,11 +366,11 @@ Upgrading the inference model does not require touching any feedback loop. The s
 
 1. Write a new wrapper (or instantiate `makeGenericOnnxWrapper` with the new config).
 2. Register it: `sue.registerInference(newWrapper)`.
-3. Call `sue.activateInference(db, newModelId, newVersion)` — this executes `setupSQL()`, deactivates the old row, inserts the new active row, and provisions the new embedding column dimension if changed.
-4. If the embedding dimension changed, the existing `embedding_inf` column is migrated. The `(model_id, model_version)` tuple in `lucid.node_embeddings_inf` ensures old embeddings are not queried against new ones — HNSW partitioning by model tuple (§6) handles this automatically.
+3. Call `sue.activateInference(newModelId, newVersion)` — the new wrapper becomes active immediately.
+4. If the embedding dimension changed, the VectorStore collection for inference (`lucy_inf`) must be recreated with the new dimension. Old inference embeddings in the GraphStore are not used against new ones — the `modelId` / `modelVersion` on each `BeliefNode` record ensures routing stays coherent.
 5. Re-embedding of the existing belief graph under the new model can be scheduled or deferred; the system continues to operate during the transition using ontic embeddings for routing.
 
-Upgrading the ontic model is a heavier migration and is outside the scope of a routine version bump. It requires re-embedding the full belief graph and updating the Vortex routing prefix. SUE does not automate this; it documents it.
+Upgrading the ontic model is a heavier migration and is outside the scope of a routine version bump. It requires re-embedding the full belief graph, recreating the `lucy_ont` VectorStore collection at the new dimension, and updating the Vortex routing prefix. SUE does not automate this; it documents it.
 
 ---
 

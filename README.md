@@ -1,4 +1,4 @@
-# LUCID v3.1
+# LUCID v3.5
 ## Library of Understanding, Contemplative Interoception and Dreams
 ### Persistent Persona State Architecture
 
@@ -30,20 +30,20 @@ The full design document is decomposed into the following sections.
 | 13 | [The Anterior Cingulate Gate](docs/13-the-anterior-cingulate-gate.md) | Conflict monitoring; gate and critic; ingress/egress chain generation |
 | 14 | [Agentic Deployment and the Operator Relationship](docs/14-agentic-deployment.md) | Operator relationship; Vortex as operator asset; convening; agentic monitoring mode |
 | 15 | [The Vortex](docs/15-the-vortex.md) | Peer mesh; semantic routing; bilateral AWE contracts; swimming; emergent cortex; the pool |
-| 16 | [Deployment](docs/16-deployment.md) | Infrastructure; NeuronDB; LFM 2.5; Vortex configuration; resource envelope |
+| 16 | [Deployment](docs/16-deployment.md) | Browser Lucy / Device Lucy / Gateway Lucy configurations; initialisation sequence; embedding models |
 | 17 | [Graph Recovery](docs/17-graph-recovery.md) | Corruption detection; recovery procedures; cap rollback; affective corpus preservation |
 | 18 | [Compliance and Data Residency](docs/18-compliance-and-data-residency.md) | Data handling; residency constraints; Vortex and regulated deployments |
 | 19 | [Failure Mode Detection and Response](docs/19-failure-mode-detection-and-response.md) | Failure taxonomy; detection signals; response protocols |
 | 20 | [Security Model](docs/20-security-model.md) | Threat surface; authentication; isolation |
-| 21 | [Multi-Tenancy](docs/21-multi-tenancy.md) | Tenant isolation; shared infrastructure |
-| 22 | [Shared Content Layer](docs/22-shared-content-layer.md) | Cross-tenant knowledge sharing; content governance |
+| 21 | [Single-Identity Deployment](docs/21-multi-tenancy.md) | One keypair, one mind; instance namespacing; no RLS or tenant isolation |
+| 22 | [External Content Ingest](docs/22-shared-content-layer.md) | Content source model; provenance levels; what syncs vs what stays private |
 | 23 | [Verification Queue and Sampling](docs/23-verification-queue-and-sampling.md) | Human-in-the-loop verification; sampling strategy |
 | 24 | [Tour Engine Architecture](docs/24-tour-engine-architecture.md) | TSP heuristics; Hebbian tour weighting; tour cost metrics |
-| 25 | [NeuronDB Integration](docs/25-neurondb-integration.md) | Schema; vector types; ONNX embedding; past convolution tensors |
+| 25 | [SUE Substrate Boundaries](docs/25-neurondb-integration.md) | What LUCID delegates to substrates vs what it owns; worker responsibilities; device-scale analytics |
 | 26 | [References](docs/26-references.md) | Citations |
 | 27 | [Browser-Native Instantiation](docs/27-browser-native-instantiation.md) | EntityDB + IndexedDB + GunDB; Worker architecture; AXE centroid routing; wide sync integration |
 | 28 | [The Synaptic Utility Engine (SUE)](docs/28-synaptic-utility-engine.md) | Model contracts (ontic/inference); substrate contracts (VectorStore/GraphStore/Mesh); browser and device implementations |
 | 29 | [Multiply Conscious](docs/29-multiply-conscious.md) | Three instantiation types; SEA identity; wide sync scope; self-dialogue reconciliation; DAM/AXE/SEA integration; Gateway Lucy anti-thrash |
 ---
 
-The v3.1 monolithic design document is at [`LUCID_v3.1.md`](LUCID_v3.1.md).
+The v3.1 monolithic design document is at [`LUCID_v3.1.md`](LUCID_v3.1.md). *(Note: the monolith reflects v3.1; the numbered docs above are the authoritative v3.5 design.)*

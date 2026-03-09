@@ -6,7 +6,7 @@
 
 ### 6.1 Node Types
 
-**Page nodes.** Approximately `L_page ≈ 4096` tokens of content. The fundamental unit of belief storage. Content is stored at the location referenced in `lucid.content`; the graph stores topology, weights, and embedding references only. For source documents shorter than 4096 tokens in their entirety, the whole document constitutes a single page node. Pages are never padded; the unit is up to `L_page`, bounded by natural document structure. Page nodes originate from operator-provided corpora, from content retrieved during infotactic navigation, and from Vortex peer exchange content that has been integrated.
+**Page nodes.** Approximately `L_page ≈ 4096` tokens of content. The fundamental unit of belief storage. Content is stored directly on the `BeliefNode` record in the GraphStore; the graph stores topology, weights, and embedding references alongside the content. For source documents shorter than 4096 tokens in their entirety, the whole document constitutes a single page node. Pages are never padded; the unit is up to `L_page`, bounded by natural document structure. Page nodes originate from operator-provided corpora, from content retrieved during infotactic navigation, and from Vortex peer exchange content that has been integrated.
 
 **Book nodes.** Collections of page nodes connected by PREV/NEXT edges, forming coherent islands of structured knowledge.
 
@@ -18,7 +18,7 @@
 
 ### 6.2 Edge Types
 
-Edges fall into three classes with distinct lifecycles. All edge types are stored in `lucid.belief_edges` and traversed by the PL/pgSQL tour loop (§24). There is no graph query language dependency; traversal is application logic executing inside PostgreSQL.
+Edges fall into three classes with distinct lifecycles. All edge types are stored in the GraphStore (`edgeUpsert`, `edgesFor`) and traversed by the tour engine in the CfC Worker (§24). There is no graph query language dependency; traversal is TypeScript application logic.
 
 **Structural edges** (created at insert, by trigger):
 - `PREV` / `NEXT`: page sequence within a book. Created automatically when a page node is inserted with a `book_id` and `sequence_position`.
@@ -189,7 +189,7 @@ The brake reduces the crystallisation threshold in the loop region: nodes that a
 
 *This library is not a collection of words, but of things that words have touched.*
 
-The Self Library is not a separate table. It is a partial index over `lucid.belief_nodes` — two boolean flags (`is_self_library`, `self_library_correct`) and an HNSW index over `node_embeddings_inf`. KNN over the positive class is the anomaly detection reference. KNN over the negative class provides the retrieval surface for incorrect-judgment proximity detection; the full judgment record, including provenance and source metadata, lives in `lucid.inheritance_corpus`. The library grows organically from the system's own outputs: narrations, generated hypotheses, consolidation bridges, and the associative candidates produced during Step 4d infotactic walks.
+The Self Library is not a separate collection. It is a filtered view over the GraphStore's node records — two boolean flags on the `BeliefNode` type (`is_self_library`, `self_library_correct`) — indexed for KNN search via EntityDB (browser) or Lancedb (device). KNN over the positive class is the anomaly detection reference via `twoPhaseSearch` (§28.13). KNN over the negative class provides the retrieval surface for incorrect-judgment proximity detection; the full judgment record, including provenance and source metadata, is stored as tagged `BeliefNode` records in the GraphStore. The library grows organically from the system's own outputs: narrations, generated hypotheses, consolidation bridges, and the associative candidates produced during Step 4d infotactic walks.
 
 ### 6.10 Belief Cycles as Identity Signal
 
