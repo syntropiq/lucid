@@ -1,12 +1,14 @@
-[← §27 Browser-Native Architecture](27-browser-native-architecture.md) | [Index](../README.md)
+[← §27 Browser-Native Instantiation](27-browser-native-instantiation.md) | [Index](../README.md) | [§29 Multiply Conscious →](29-multiply-conscious.md)
 
 ---
 
 ## 28. The Synaptic Utility Engine (SUE)
 
-The model choices in §16 and §25 are best-of-class at the time of writing. A new version drops, a better ontic embedding model emerges, an operator runs a different inference architecture — none of these should require touching the core feedback loops. All model-specific surface is wrapped. The wrapper provides what the rest of the system needs. The rest of the system does not know what is underneath.
+A new model drops, a better vector store emerges, an operator runs a different inference architecture, a new instantiation type runs on hardware the original design never considered — none of these should require touching the core feedback loops. All substrate-specific surface is wrapped. The wrapper provides what the rest of the system needs. The rest of the system does not know what is underneath.
 
-That is SUE's job. She looks out for the system and helps it make sense of the world regardless of which model is currently under the hood.
+That is SUE's job. She looks out for the system and helps it make sense of the world regardless of which model or storage layer is currently under the hood.
+
+SUE wraps two categories of concern: **model contracts** (what generates embeddings and narration) and **substrate contracts** (where state is stored and how instances communicate). Both follow the same pattern: a TypeScript interface, one or more implementations, and a registry that activates the right implementation at boot.
 
 ---
 
@@ -482,4 +484,121 @@ Upgrading the ontic model is a heavier migration and is outside the scope of a r
 
 ---
 
-[← §27 Browser-Native Architecture](27-browser-native-architecture.md) | [Index](../README.md)
+## 28.10 Substrate Contracts
+
+Model contracts cover what thinks. Substrate contracts cover where state lives and how instances communicate. LUCID defines three substrate interfaces. The core feedback loops call only these interfaces — they do not import EntityDB, IndexedDB, or GunDB directly.
+
+```typescript
+// Where vectors are stored and searched
+interface VectorStore {
+  add(id: string, vector: Float32Array, metadata?: Record<string, unknown>): Promise<void>;
+  search(query: Float32Array, k: number): Promise<Array<{ id: string; score: number }>>;
+  get(id: string): Promise<Float32Array | null>;
+  delete(id: string): Promise<void>;
+}
+
+// Where the belief graph and all rich state lives
+interface GraphStore {
+  nodeUpsert(node: BeliefNode): Promise<void>;
+  nodeGet(id: string): Promise<BeliefNode | null>;
+  nodeQuery(filter: Partial<BeliefNode>): Promise<BeliefNode[]>;
+  edgeUpsert(edge: BeliefEdge): Promise<void>;
+  edgesFor(nodeId: string, type?: EdgeType): Promise<BeliefEdge[]>;
+  centroidGet(id?: string): Promise<CentroidRecord>;
+  centroidPut(record: CentroidRecord): Promise<void>;
+  awePut(entry: AWEEntry): Promise<void>;
+  aweRecent(n: number): Promise<AWEEntry[]>;
+  spectralPut(sample: SpectralRecord): Promise<void>;
+  spectralLatest(): Promise<SpectralRecord | null>;
+  syncLogAppend(event: SyncEvent): Promise<void>;
+  syncLogPending(since: string): Promise<SyncEvent[]>;
+}
+
+// How instances communicate and discover each other
+interface Mesh {
+  publish(topic: string, data: unknown): Promise<void>;
+  subscribe(topic: string, handler: (data: unknown, peerId: string) => void): void;
+  advertise(key: string, value: unknown): Promise<void>;
+  observe(peerId: string, key: string, handler: (value: unknown) => void): void;
+  peers(): string[];
+}
+```
+
+### 28.11 Substrate Implementations
+
+**Browser Lucy** (§27):
+
+| Interface | Implementation |
+|---|---|
+| `VectorStore` (ontic) | EntityDB `lucy_ont` collection |
+| `VectorStore` (inference) | EntityDB `lucy_inf` collection |
+| `GraphStore` | IndexedDB typed wrapper |
+| `Mesh` | GunDB over WebRTC/WebSockets |
+
+**Device Lucy** (§29):
+
+| Interface | Implementation |
+|---|---|
+| `VectorStore` (ontic) | Lancedb — real HNSW, Node-native |
+| `VectorStore` (inference) | Lancedb |
+| `GraphStore` | SQLite (better-sqlite3) or LevelDB |
+| `Mesh` | GunDB (Node) |
+
+The choice of Lancedb for Device Lucy matters: EntityDB's brute-force cosine is adequate at personal browser scale (thousands of belief nodes) but Device Lucy accumulates the full graph over time including dream cycle consolidation products. Lancedb provides HNSW indices and scales without architectural changes. Same `VectorStore` interface; different constructor passed at boot.
+
+### 28.12 Substrate Registry
+
+```typescript
+// sue/registry.ts — extended for substrate contracts
+const vectorStoreRegistry = new Map<string, { ont: VectorStore; inf: VectorStore }>();
+let activeGraphStore: GraphStore | null = null;
+let activeMesh: Mesh | null = null;
+
+export const sue = {
+  // ... existing model registry methods ...
+
+  registerSubstrate(impl: {
+    vectorStores: { ont: VectorStore; inf: VectorStore };
+    graphStore: GraphStore;
+    mesh: Mesh;
+  }) {
+    activeGraphStore = impl.graphStore;
+    activeMesh = impl.mesh;
+    vectorStoreRegistry.set('active', impl.vectorStores);
+  },
+
+  ont(): VectorStore   { return vectorStoreRegistry.get('active')!.ont; },
+  inf(): VectorStore   { return vectorStoreRegistry.get('active')!.inf; },
+  graph(): GraphStore  { if (!activeGraphStore) throw new Error('SUE: no graph store'); return activeGraphStore; },
+  mesh(): Mesh         { if (!activeMesh)       throw new Error('SUE: no mesh');        return activeMesh; },
+};
+```
+
+Boot sequence for Browser Lucy:
+
+```typescript
+import { sue }            from './sue/registry';
+import { nomicEmbedV15 }  from './sue/wrappers/ontic/nomic-embed-v1.5';
+import { makeGenericOnnxWrapper } from './sue/wrappers/inference/generic-onnx';
+import { EntityDBVectorStore }   from './sue/substrate/entitydb-vector-store';
+import { IndexedDBGraphStore }   from './sue/substrate/indexeddb-graph-store';
+import { GunMesh }               from './sue/substrate/gun-mesh';
+
+sue.registerOntic(nomicEmbedV15);
+sue.registerInference(makeGenericOnnxWrapper(OPERATOR_MODEL_CONFIG));
+
+sue.registerSubstrate({
+  vectorStores: {
+    ont: new EntityDBVectorStore('lucy_ont', 'Xenova/nomic-embed-text-v1.5', 768),
+    inf: new EntityDBVectorStore('lucy_inf', OPERATOR_MODEL_ID, INFERENCE_DIM),
+  },
+  graphStore: new IndexedDBGraphStore('lucid'),
+  mesh:       new GunMesh(GUN_PEERS, LUCY_SEA_PAIR),
+});
+```
+
+Boot sequence for Device Lucy differs only in the substrate constructors — the rest of the boot sequence, every feedback loop, and all LUCID logic is identical.
+
+---
+
+[← §27 Browser-Native Instantiation](27-browser-native-instantiation.md) | [Index](../README.md) | [§29 Multiply Conscious →](29-multiply-conscious.md)

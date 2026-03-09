@@ -1,176 +1,211 @@
-# LUCID Lite — TODO
+# LUCID — TODO
 
-Phases are sequential. Within a phase, items can be parallelised where marked ⟂. See `PLAN.md` for rationale and detail behind each item.
-
----
-
-## Phase 1 — DDL + pglite shell
-
-- [ ] Scaffold repo structure
-  - [ ] `src/db/` — SQL migrations
-  - [ ] `src/sue/` — SUE registry + wrappers (from §28)
-  - [ ] `src/workers/` — ONNX worker shells (empty stubs for now)
-  - [ ] `src/app/` — UI shell (empty index.html for now)
-  - [ ] `src/network/` — libp2p shell (empty stub for now)
-  - [ ] `package.json` with deps: pglite, @xenova/transformers, vite, vitest
-  - [ ] `tsconfig.json`
-
-- [ ] Write `src/db/01-schema.sql`
-  - [ ] `sue` schema + `sue.model_registry` + `sue.activation_log` (from §28.2)
-  - [ ] `lucid.conversation_turns`
-  - [ ] `lucid.belief_nodes`
-  - [ ] `lucid.belief_edges`
-  - [ ] `lucid.embedding_queue` (status enum, index on pending)
-  - [ ] `lucid.inference_queue` (status enum, index on pending)
-  - [ ] `lucid.node_embeddings_ont` — `vector(768)` ⟂
-  - [ ] `lucid.node_embeddings_inf` — `vector(dim)` dim from SUE registry ⟂
-  - [ ] `lucid.centroids` — columns: `c_i`, `c_o`, `c_s`, `c_w`, `c_0`, `foundation_weight`, `orbital_health`
-  - [ ] `lucid.spectral_monitor` — columns: `inner_streams jsonb`, `stream_labels text[]`, `cross_stream_correlation float`, `dual_stream_available bool`, `composite_health_score float`, `sampled_at timestamptz`
-  - [ ] `lucid.affective_corpus` — mood token + valence fields
-  - [ ] Trigger: `trg_enqueue_inference` — new user turn → inference_queue INSERT
-  - [ ] Trigger: `trg_enqueue_embedding` — new belief_node → embedding_queue INSERT
-  - [ ] Confirm schema is idempotent (safe to re-apply)
-
-- [ ] Port SUE code from §28 into `src/sue/`
-  - [ ] `src/sue/contracts/ontic.ts` — `OnticContract` interface
-  - [ ] `src/sue/contracts/inference.ts` — `InferenceContract` + `SpectralSample` interfaces
-  - [ ] `src/sue/wrappers/ontic/nomic-embed-v1.5.ts`
-  - [ ] `src/sue/wrappers/inference/lfm-2.5.ts`
-  - [ ] `src/sue/wrappers/inference/generic-onnx.ts` — `makeGenericOnnxWrapper()`
-  - [ ] `src/sue/registry.ts` — `sue.registerOntic`, `sue.activateOntic`, `sue.ontic()`, etc.
-
-- [ ] Write `src/db/seed.ts`
-  - [ ] Boot pglite with `vector` + `live` extensions
-  - [ ] Apply `01-schema.sql`
-  - [ ] Activate SUE (register + activate wrappers)
-  - [ ] Smoke test: INSERT belief_node → verify embedding_queue row appears
-  - [ ] Smoke test: INSERT user conversation_turn → verify inference_queue row appears
-
-- [ ] Phase 1 test: `vitest` against in-process pglite, no ONNX, queue rows only
+Phases are sequential. Items marked ⟂ can be parallelised within a phase. See `PLAN.md` for rationale.
 
 ---
 
-## Phase 2 — ONNX workers as live subscribers
+## Phase 1 — SUE substrate layer
 
-- [ ] Write `src/db/02-centroid.sql`
-  - [ ] `lucid.update_centroid_ont()` — provenance-weighted centroid update (§6.5)
-  - [ ] `lucid.update_centroid_inf()` — same for inference space
-  - [ ] Trigger: `trg_centroid_update_ont` — after INSERT on `node_embeddings_ont`
-  - [ ] `lucid.write_spectral_sample()` function (from §28.7)
+- [ ] Scaffold `src/` directory structure
+  - [ ] `src/sue/contracts/` — TypeScript interfaces
+  - [ ] `src/sue/substrate/` — implementations
+  - [ ] `src/sue/wrappers/` — model wrappers (Phase 2)
+  - [ ] `src/core/` — feedback loop logic
+  - [ ] `src/workers/` — Web Workers
+  - [ ] `src/app/` — UI
+  - [ ] `src/device/` — Device Lucy daemon
+  - [ ] `package.json`, `tsconfig.json`, `vite.config.ts`
 
-- [ ] Write `src/workers/embed.worker.ts` ⟂
-  - [ ] Boot SUE (register ontic wrapper only)
-  - [ ] `db.live.query` on `embedding_queue WHERE status='pending' LIMIT 1`
-  - [ ] Handler: mark `processing` → `sue.ontic().embed(content)` → INSERT `node_embeddings_ont` → mark `complete`
-  - [ ] Error handling: mark `error`, log `error_msg`
+- [ ] Write `src/sue/contracts/types.ts` — shared types ⟂
+  - [ ] `BeliefNode`, `BeliefEdge`, `EdgeType`, `NodeType`
+  - [ ] `CentroidRecord` (c_i, c_o, c_s, c_w, c_0, orbital_health)
+  - [ ] `AWEEntry` (valence, arousal, mood_token)
+  - [ ] `SpectralRecord` (streams, stream_labels, cross_corr, health_score)
+  - [ ] `SyncEvent` (id, type, payload, instance_id, created_at)
+  - [ ] `ConversationTurn` (id, role, content, mood_token, created_at)
+  - [ ] `ReconciliationRecord`
 
-- [ ] Write `src/workers/inference.worker.ts` ⟂
-  - [ ] Boot SUE (register inference wrapper only)
-  - [ ] `db.live.query` on `inference_queue WHERE status='pending' LIMIT 1`
-  - [ ] Context assembly: last 10 turns + top-5 HNSW neighbours of user message embedding
-  - [ ] `sue.inference().generate(prompt)` → INSERT `conversation_turns` (assistant) + `belief_nodes` (narration)
-  - [ ] `sue.inference().spectralSample()` → `lucid.write_spectral_sample()`
-  - [ ] Mark queue item `complete`
+- [ ] Write `src/sue/contracts/vector-store.ts` — `VectorStore` interface ⟂
+- [ ] Write `src/sue/contracts/graph-store.ts` — `GraphStore` interface ⟂
+- [ ] Write `src/sue/contracts/mesh.ts` — `Mesh` interface ⟂
 
-- [ ] Wire workers to pglite instance (SharedArrayBuffer approach for browser; worker_threads for Node.js)
+- [ ] Write `src/sue/substrate/entitydb-vector-store.ts` ⟂
+  - [ ] `add(id, vector, metadata)` → EntityDB insert
+  - [ ] `search(query, k)` → EntityDB cosine KNN
+  - [ ] `get(id)` → EntityDB fetch by ID
+  - [ ] `delete(id)` → EntityDB remove
 
-- [ ] Phase 2 test
-  - [ ] INSERT belief_node with content → verify `node_embeddings_ont` populated within timeout
-  - [ ] INSERT user turn → verify assistant turn appears within timeout
-  - [ ] Verify `lucid.centroids` `c_o` updated after embedding
-  - [ ] Verify `lucid.spectral_monitor` row written after inference
+- [ ] Write `src/sue/substrate/indexeddb-graph-store.ts` ⟂
+  - [ ] Object store definitions: belief_nodes, belief_edges, awe_corpus, spectral_monitor, centroids, conversation_turns, sync_log, reconciliation_log
+  - [ ] `nodeUpsert`, `nodeGet`, `nodeQuery`
+  - [ ] `edgeUpsert`, `edgesFor`
+  - [ ] `centroidGet`, `centroidPut`
+  - [ ] `awePut`, `aweRecent`
+  - [ ] `spectralPut`, `spectralLatest`
+  - [ ] `syncLogAppend`, `syncLogPending`
 
----
+- [ ] Write `src/sue/substrate/gun-mesh.ts` ⟂
+  - [ ] Constructor: `new GunMesh(peers, seaPair)` — Gun init + SEA auth
+  - [ ] `publish`, `subscribe`
+  - [ ] `advertise`, `observe`
+  - [ ] `peers()`
+  - [ ] `syncLogDrain(graphStore)` — drains pending events into Gun mind namespace
+  - [ ] Incoming event handler skeleton (hydration in Phase 5)
 
-## Phase 3 — Chat interface (closes the loop)
+- [ ] Write `src/sue/substrate/lancedb-vector-store.ts` (Node-only) ⟂
+- [ ] Write `src/sue/substrate/sqlite-graph-store.ts` (Node-only) ⟂
 
-- [ ] Vite project scaffold in `src/app/`
-  - [ ] `index.html` — minimal: message list + input form + queue status badge + health badge
-  - [ ] `main.ts` — boots pglite, applies schema, activates SUE, launches workers, attaches live queries
-
-- [ ] Live queries for UI
-  - [ ] Conversation display: `SELECT role, content, created_at FROM conversation_turns ORDER BY created_at DESC LIMIT 50`
-  - [ ] Queue depth: pending counts for inference + embedding queues
-  - [ ] Spectral health badge: `composite_health_score` from latest spectral_monitor row
-  - [ ] Centroid position (debug): current `c_o`, `c_w` distance from `c_0`
-
-- [ ] Form submit handler
-  - [ ] `INSERT lucid.conversation_turns (role='user', content=$1)`
-  - [ ] That is all — the rest is live queries
-
-- [ ] `window.__lucid = { db, sue }` console handle
-
-- [ ] OPFS persistence: `PGlite.create({ dataDir: 'idb://lucid-lite' })`
-
-- [ ] Phase 3 manual test
-  - [ ] Open browser, type message, receive response
-  - [ ] Open DevTools → Application → IndexedDB → verify belief_nodes accumulating
-  - [ ] Refresh page → verify conversation persists from OPFS
-  - [ ] Open `window.__lucid.db` in console → `SELECT * FROM lucid.centroids` → verify c_o has moved
-
----
-
-## Phase 4 — Feedback loops in SQL
-
-- [ ] Write `src/db/03-loops.sql`
-
-  **AWE chain**
-  - [ ] `lucid.compute_affective_valence(content text)` — placeholder: simple sentiment heuristic returning `{valence: float, arousal: float}`
-  - [ ] Trigger: `trg_awe_chain` — after INSERT on `lucid.belief_nodes` WHERE `node_type = 'narration'` → INSERT `affective_corpus`, derive `mood_token`, UPDATE `conversation_turns`
-  - [ ] `lucid.affective_corpus` LIMIT + rolling window management
-
-  **Spectral health composite**
-  - [ ] `lucid.compute_spectral_composite()` — reads latest `spectral_monitor` row, computes composite score from stream FFT data
-  - [ ] Trigger: `trg_spectral_composite` — after INSERT/UPDATE on `spectral_monitor`
-  - [ ] Live query hook in inference worker: `composite_health_score < 0.3` → call `injectCosineDisimilarNode()`
-
-  **Working centroid CfC**
-  - [ ] `lucid.update_working_centroid()` — closed-form CfC step (§6.6)
-  - [ ] Trigger: `trg_cfc_step` — after UPDATE on `lucid.centroids` WHERE `c_o` changed
-
-  **Orbital health**
-  - [ ] `lucid.check_orbital_health()` — 32-page window check: does trajectory enclose both `c_i` and `c_o`?
-  - [ ] Updates `orbital_health` boolean on `lucid.centroids`
-  - [ ] Live query: `orbital_health = false` → log intervention tier, INSERT TripleDent Gum node
-
-- [ ] Phase 4 test
-  - [ ] Verify `affective_corpus` grows after conversation
-  - [ ] Verify `mood_token` appears on conversation turns
-  - [ ] Verify `composite_health_score` is computed and written
-  - [ ] Manually trigger low-health condition (INSERT 20 identical turns) → verify injection fires
-  - [ ] Verify `c_w` changes after centroid update
+- [ ] Phase 1 tests — contract test suite that all implementations must pass
+  - [ ] `VectorStore` contract tests: add, search returns k results, get, delete
+  - [ ] `GraphStore` contract tests: node CRUD, edge CRUD, centroid round-trip, sync log append + pending
+  - [ ] Run contract tests against EntityDB + IndexedDB implementations
+  - [ ] Run contract tests against Lancedb + SQLite implementations
 
 ---
 
-## Phase 5 — Vortex / libp2p
+## Phase 2 — Model wrappers + SUE registry
 
-- [ ] Write `src/db/04-peer-centroids.sql`
-  - [ ] `lucid.peer_centroids` table: `peer_id text PK`, `c_o vector(768)`, `last_seen timestamptz`
-  - [ ] `lucid.upsert_peer_centroid(peer_id, c_o)` function
+- [ ] Port `src/sue/contracts/ontic.ts` — `OnticContract` interface ⟂
+- [ ] Port `src/sue/contracts/inference.ts` — `InferenceContract` + `SpectralSample` ⟂
 
-- [ ] Write `src/network/vortex.ts`
-  - [ ] `initVortex(db, sue)` — creates libp2p node with WebRTC + WebSockets + Noise + Yamux + GossipSub
-  - [ ] Heartbeat: `setInterval` → read `lucid.centroids c_o` → publish to `lucid:centroid` topic
-  - [ ] Incoming centroid: `lucid:centroid` subscription → `lucid.upsert_peer_centroid()`
-  - [ ] Incoming work: `lucid:work` subscription → cosine similarity check → accept (INSERT `belief_nodes`) or forward
-  - [ ] `buildHeartbeat(db)` — reads swim mode, returns appropriate payload (§27.5)
-  - [ ] `forwardToHigherScoringPeer(packet)` — publish to highest-scoring peer by centroid proximity
+- [ ] Write `src/sue/wrappers/ontic/nomic-embed-v1.5.ts` ⟂
+- [ ] Write `src/sue/wrappers/inference/generic-onnx.ts` — `makeGenericOnnxWrapper()` ⟂
+- [ ] Write `src/sue/wrappers/inference/lfm-2.5.ts` (dual-stream) ⟂
 
-- [ ] Live query: `lucid.peer_centroids` UPDATE → rebuild in-memory routing table
+- [ ] Write `src/sue/registry.ts` — unified registry
+  - [ ] Model methods: `registerOntic`, `activateOntic`, `ontic()`
+  - [ ] Model methods: `registerInference`, `activateInference`, `inference()`
+  - [ ] Substrate method: `registerSubstrate({ vectorStores, graphStore, mesh })`
+  - [ ] Substrate accessors: `ont()`, `inf()`, `graph()`, `mesh()`
 
-- [ ] Wire `vortex.ts` into `src/app/main.ts` boot sequence
-
-- [ ] Phase 5 test
-  - [ ] Open two browser tabs → verify each receives the other's heartbeat
-  - [ ] Verify `lucid.peer_centroids` has a row for the remote peer
-  - [ ] Send a work packet from tab A → verify tab B INSERTs to belief_nodes
-  - [ ] Verify tab B centroid moves after receiving work
+- [ ] Phase 2 tests
+  - [ ] `sue.ontic().embed('hello')` → Float32Array length 768
+  - [ ] `sue.inference().generate([{role:'user', content:'hi'}])` → string
+  - [ ] `sue.inference().spectralSample()` → valid SpectralSample
 
 ---
 
-## Ongoing / cross-phase
+## Phase 3 — Embed + Inference Workers
 
-- [ ] Keep `src/sue/` in sync with §28 as the design evolves
-- [ ] Keep `src/db/01-schema.sql` the single source of truth — no schema defined outside SQL files
-- [ ] Every new live query gets a corresponding test INSERT that verifies the callback fires
-- [ ] `window.__lucid` console handle remains available in all phases — do not remove
+- [ ] Write `src/workers/embed.worker.ts`
+  - [ ] Boot SUE (ontic wrapper + EntityDB vector store + IndexedDB graph store)
+  - [ ] Poll GraphStore for unindexed nodes (BroadcastChannel trigger)
+  - [ ] `sue.ontic().embed(content)` → `sue.ont().add(id, embedding)`
+  - [ ] `sue.graph().nodeUpsert({ ...node, index_state: 'indexed' })`
+  - [ ] `sue.graph().syncLogAppend({ type: 'belief:node', ... })`
+  - [ ] Broadcast `CENTROID_DIRTY`
+
+- [ ] Write `src/workers/inference.worker.ts`
+  - [ ] Boot SUE (inference wrapper + substrates)
+  - [ ] BroadcastChannel listener for new user turns
+  - [ ] Context assembly: last 20 turns from GraphStore + top-5 KNN from `sue.ont()`
+  - [ ] `sue.inference().generate(messages)` → response text
+  - [ ] `sue.graph().nodeUpsert(narrationNode)`
+  - [ ] `sue.graph().awePut(spectralAsSyncEvent)`
+  - [ ] `sue.graph().syncLogAppend({ type: 'belief:node', ... })`
+  - [ ] Broadcast `TURNS_UPDATED`
+
+- [ ] Write `src/workers/cfc.worker.ts`
+  - [ ] BroadcastChannel listener for `CENTROID_DIRTY`
+  - [ ] Read current centroid from GraphStore
+  - [ ] Compute provenance-weighted running average for C_o
+  - [ ] Apply CfC ODE step for C_w
+  - [ ] Check orbital health condition
+  - [ ] `sue.graph().centroidPut(updated)`
+  - [ ] Broadcast `HEALTH_UPDATED`; if orbital_health false: broadcast `INJECT_REQUEST`
+
+- [ ] Phase 3 tests
+  - [ ] Insert belief node → verify EntityDB `lucy_ont` has vector within 5s
+  - [ ] Insert user turn → verify assistant turn in GraphStore within 10s
+  - [ ] Verify sync_log has entries after both
+
+---
+
+## Phase 4 — Chat interface
+
+- [ ] `src/app/index.html` — message list, input form, health badge, queue indicator
+- [ ] `src/app/main.ts`
+  - [ ] SUE boot (browser substrate)
+  - [ ] Launch Embed Worker, Inference Worker, CfC Worker
+  - [ ] BroadcastChannel message handler → targeted GraphStore reads → render
+  - [ ] Form submit → `sue.graph().nodeUpsert(userTurn)` + broadcast `NEW_TURN`
+  - [ ] `window.__lucy = { sue }` console handle
+- [ ] Vite config — WASM asset handling, Worker bundling
+- [ ] Manual test checklist
+  - [ ] Type message → response appears
+  - [ ] Refresh → conversation persists
+  - [ ] Console: `window.__lucy.sue.graph().centroidGet('self')` → C_o populated
+  - [ ] Console: `window.__lucy.sue.ont().search(vec, 5)` → returns results
+
+---
+
+## Phase 5 — Gun mesh + wide sync
+
+- [ ] Complete `src/sue/substrate/gun-mesh.ts`
+  - [ ] `syncLogDrain()` timer — drains pending sync_log into Gun mind namespace
+  - [ ] `mind.get('events').map().on(...)` — incoming event handler
+  - [ ] `hydrateEvent(event)` — write incoming events to local GraphStore
+  - [ ] `detectDivergence(event)` — check for belief conflict (Phase 6 handles resolution)
+  - [ ] Centroid advertisement: `mind.get('instances').get(INSTANCE_ID).get('centroid').put(...)`
+  - [ ] Peer centroid cache: observe `mind.get('instances').map()` for centroid updates
+
+- [ ] AXE peer scoring hook
+  - [ ] `Gun.on('opt', ...)` override of `axe.opt.peers`
+  - [ ] Cosine similarity scoring against peer centroid cache
+  - [ ] Matryoshka prefix (128-dim) for routing comparison
+
+- [ ] Phase 5 tests
+  - [ ] Two tabs, same SEA keypair → verify sync_log events propagate
+  - [ ] Write belief node in tab A → verify it appears in tab B's IndexedDB
+  - [ ] Verify peer centroid cache in tab B has tab A's C_o
+
+---
+
+## Phase 6 — Self-dialogue reconciliation
+
+- [ ] Write `src/core/reconciliation.ts`
+  - [ ] `detectDivergence(local, remote)` — content diff + valence threshold
+  - [ ] `assemblePosition(node)` — context package: node + associated AWE + recent turns
+  - [ ] `initiateReconciliation(local, remote, remoteInstanceId)`
+  - [ ] Mesh subscription: `lucid:reconcile:${INSTANCE_ID}` handler
+  - [ ] `handleReconciliationRequest(request)` → assemble own position → respond
+  - [ ] `runDialogue(posA, posB)` — 2-3 round inference loop via `sue.inference().generate()`
+  - [ ] `writeReconciliationNode(dialogue, winnerId, loserId)` — new node + provenance update
+
+- [ ] Wire into gun-mesh.ts: `detectDivergence` called from incoming event handler
+
+- [ ] Phase 6 tests
+  - [ ] Manually write divergent nodes to two instances
+  - [ ] Verify reconciliation request published to mesh
+  - [ ] Verify dialogue runs (≥ 2 turns)
+  - [ ] Verify reconciliation node in graph with edges to both originals
+  - [ ] Verify loser provenance < original provenance
+
+---
+
+## Phase 7 — Device Lucy daemon
+
+- [ ] `src/device/index.ts` — Node entry point
+  - [ ] SUE boot with Lancedb + SQLite substrate
+  - [ ] Same workers as browser (Node-compatible versions)
+  - [ ] GunDB Node peer (acts as relay if configured)
+
+- [ ] `src/device/dream-cycle.ts` — full consolidation (§12)
+  - [ ] Crystallisation pass using Louvain community detection
+  - [ ] Cap delta computation
+  - [ ] Cap delta publication to Gun mesh
+
+- [ ] `src/device/analytics.ts`
+  - [ ] Louvain community detection over belief edge graph
+  - [ ] PageRank for tour node importance weighting
+
+- [ ] Phase 7 test: `node src/device/index.ts` starts, connects to mesh, receives events from browser tab
+
+---
+
+## Ongoing
+
+- [ ] SUE interfaces are the only thing core logic imports — enforce via ESLint no-restricted-imports
+- [ ] SEA keypair: never logged, never committed, loaded from env or secure store
+- [ ] `window.__lucy` / `global.__lucy` handle always present, never removed
+- [ ] Every new substrate implementation passes the Phase 1 contract test suite before use
