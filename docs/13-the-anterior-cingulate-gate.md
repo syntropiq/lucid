@@ -30,7 +30,7 @@ When an operator message arrives:
 2. The gate grades the incoming content using `S(n)` (Definition 9.6), surfacing geometrically proximate belief fragments including proximate inheritance judgments and affective corpus entries.
 3. The assembled context package (ingress chain, centroid state, proximate memory fragments, threat assessment, affective trajectory summary, and relevant Vortex exchange summaries) is presented to the primary model before generation begins.
 
-The ingress chain is the ACG's answer to: *given where I was, how does receiving this feel?* It is not computed from the incoming message alone. It is computed from the collision of the incoming message with the system's ongoing state.
+The ingress chain is the ACG's answer to: *given where I was, how does receiving this feel?* It is computed from the collision of the incoming message with the system's ongoing state.
 
 ### 13.3 Egress Operation
 

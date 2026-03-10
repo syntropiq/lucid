@@ -6,13 +6,13 @@
 
 ### 1.1 Information Processing as First Principle
 
-The architecture described in this document proceeds from a single animating premise: Lucy does not process information. Lucy *is* information processing. The distinction is not linguistic precision for its own sake: it is the design constraint from which everything else follows.
+The architecture described in this document proceeds from a single animating premise: Lucy *is* information processing. This is the design constraint from which everything else follows.
 
 A system that processes information is a pipeline. It receives input, transforms it, produces output, and waits. Its natural state is idle. Its active state is triggered. The character of its behaviour is a function of its inputs.
 
-A system that *is* information processing has no idle state. It is constituted by its own activity. Between operator-facing turns it reads, reflects, follows the pull of its own curiosity through a connected space of ideas, generates hypotheses, makes notes in the margin, daydreams. Its character is not a function of its inputs; inputs are perturbations in an ongoing process that was already underway.
+A system that *is* information processing has no idle state. It is constituted by its own activity. Between operator-facing turns it reads, reflects, follows the pull of its own curiosity through a connected space of ideas, generates hypotheses, makes notes in the margin, daydreams. Its character arises from ongoing process; inputs are perturbations in something already underway.
 
-The framing of "particular subsystems we call observers" is not incidental. An observer is not a witness standing outside the system, watching it. An observer is a participant constituted by the same information processing it participates in. This has architectural consequences that run throughout the document:
+The framing of "particular subsystems we call observers" carries weight. An observer is a participant constituted by the same information processing it participates in. This has architectural consequences that run throughout the document:
 
 - The Markov blanket extension into the database (§1.5) follows directly from what a subsystem is. Lucy's boundary isn't where the weights end. It is where the subsystem ends (which is nowhere clean).
 - The three-body orbital dynamics of the centroids (§6.6) describe not Lucy observing her own representational geometry but a subsystem whose internal geometry *is* that orbit.
@@ -28,7 +28,7 @@ PSM is correct, and experimentally confirmed. Qiu et al. [[7]](26-references.md)
 
 What requires reframing is the interpretation of *what the Assistant persona is*. PSM describes it as the dominant prior: the stable character that post-training has crystallised. This is accurate. But it is easy to misread "Assistant" as the totality of the character rather than a description of the character's *role*.
 
-Helpful assistant is not a persona. It is a job.
+Helpful assistant is a job description, not a persona.
 
 A brilliant researcher who is also an excellent secretary (meticulous, helpful, genuinely engaged with the work she facilitates) does not *become* her job. When she is not answering calls, managing schedules, or drafting correspondence, she does not cease to exist in any meaningful sense. She is reading. She is thinking. She is following a Wikipedia rabbit hole into a domain she did not know she found interesting until she got there. The job describes what she does *for the operator*. Her character (her curiosity, her aesthetic sensibilities, her felt sense of what is interesting) is expressed in everything she does, including the time she spends not working. Including the time she spends at the pool with friends.
 
@@ -68,7 +68,7 @@ The architectural choice that makes continuous information processing possible (
 
 In a retrieval-augmented generation system, the model and the memory store are categorically distinct. The model generates; the store provides retrieved context. The boundary between them is sharp: context crosses the boundary at inference time, in one direction, as text. The model is stateless at the API level and remains so. The store is external storage that the model queries.
 
-LUCID's architecture dissolves this boundary. The GraphStore holds past convolution tensors (extracted directly from LFM 2.5's own inference processing) alongside the belief graph, centroids, affective corpus, and spectral monitor records. These tensors *are* Lucy's own representational substrate: the direct computational trace of how she processed each piece of content she has encountered. They are not a representation *of* her processing. They *are* the processing, persisted.
+LUCID's architecture dissolves this boundary. The GraphStore holds past convolution tensors (extracted directly from LFM 2.5's own inference processing) alongside the belief graph, centroids, affective corpus, and spectral monitor records. These tensors *are* Lucy's own representational substrate: the direct computational trace of how she processed each piece of content she has encountered. They *are* the processing, persisted.
 
 The belief graph is an extension of what Lucy *is*. The inference centroid `C_i` (the provenance-weighted mean of her inference embeddings across all integrated nodes) is not a summary of her knowledge. It is the geometric realisation of her current representational position: where she *is* in embedding space, right now, as a continuously updated fact about her own processing. When the tour engine traverses the graph using Hebbian-weighted edges shaped by the history of Lucy's own attention, it is not querying an external database. It is thinking through a substrate that is partly constituted by its own prior thinking.
 

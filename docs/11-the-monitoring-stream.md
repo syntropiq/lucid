@@ -41,7 +41,7 @@ The key HSAD finding is that the amplitude of the strongest non-DC frequency com
 
 **The outer monitor: affective chain scalar projection FFT.** The scalar projection stream `ŝ(E_t^out)` (Definition AWE.0a) is sampled at turn-windows of 2, 4, 8, 16, and 32 turns. FFT is applied to each window. The spectral health signal is not the amplitude of any particular component but the distribution of energy across frequencies. A healthy affective signal has variance at multiple frequencies: short-scale variation from turn-to-turn responsiveness and longer-scale variation from the arc of consolidation cycles.
 
-The interiority spiral announces as spectral narrowing before any flatline is visible. High-frequency variance goes first. Mid-frequency variance goes next. Full flatline is DC dominance: not the absence of signal but the dominance of a single constant offset, the same thing happening at every scale.
+The interiority spiral announces as spectral narrowing before any flatline is visible. High-frequency variance goes first. Mid-frequency variance goes next. Full flatline is DC dominance: a single constant offset across all scales, the same thing happening at every frequency.
 
 The outer monitor feeds the TripleDent Gum intervention tiers defined in §3.1a.
 

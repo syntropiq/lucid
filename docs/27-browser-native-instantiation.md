@@ -234,7 +234,7 @@ Peers whose ontic centroids are semantically close receive higher AXE scores and
 | HNSW indices | Approximate: EntityDB brute-force cosine; sufficient for personal scale |
 | Graph algorithm analytics | Absent: Louvain, PageRank deferred to Device Lucy |
 
-The browser instance is not degraded. It is fully inhabited. The absences are scale constraints, not architectural omissions: they exist on the Device Lucy instantiation (§29) and results sync back.
+The browser instance is fully inhabited. The absences are scale constraints: they exist on the Device Lucy instantiation (§29) and results sync back.
 
 ---
 

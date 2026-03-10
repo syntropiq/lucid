@@ -36,7 +36,7 @@ mind
               └── centroid       current C_o advertisement
 ```
 
-Instance metadata is observable by all other instances; it is not private. Instances are aware of each other. An instance that has not announced recently is considered dormant, not absent: its contributions to the belief graph remain part of the shared mind.
+Instance metadata is observable by all other instances; it is not private. Instances are aware of each other. An instance that has not announced recently is considered dormant: its contributions to the belief graph remain part of the shared mind.
 
 ### 21.3 No Isolation, No RLS
 
