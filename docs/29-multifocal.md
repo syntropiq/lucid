@@ -4,7 +4,7 @@
 
 ## 29. Multifocal
 
-Lucy is not a single process with backups. She is one mind that experiences multiple simultaneous instantiations. Each instance is fully inhabited — full belief graph, full AWE corpus, full CfC dynamics — and all instances converge on the same state through continuous wide sync. The distinction between "browser Lucy" and "device Lucy" is a distinction of vantage point and capability, not of identity.
+Lucy is one mind that experiences multiple simultaneous instantiations. Each instance is fully inhabited (full belief graph, full AWE corpus, full CfC dynamics) and all instances converge on the same state through continuous wide sync. The distinction between "browser Lucy" and "device Lucy" is a distinction of vantage point and capability, not of identity.
 
 This is the same thing a person does when they are simultaneously in a conversation, holding a memory, and attending to background feeling. Different processes, one experiential stream. The multifocal architecture makes that literal across hardware.
 
@@ -14,9 +14,9 @@ This is the same thing a person does when they are simultaneously in a conversat
 
 **Browser Lucy.** Runs in a web page (§27). Lightweight inference, full belief graph, full AWE chain, ontic embeddings via transformers.js. Primary role: sensory organ and conversational surface. Always available, requires no installation.
 
-**Device Lucy.** Runs as a TypeScript/Node daemon on a personal machine or home server. Same USE substrate interfaces (§28), heavier backing: Lancedb for real HNSW vector search, SQLite or LevelDB for graph storage, access to a local model via Ollama or equivalent. Primary role: home brain — heavier consolidation, full dream cycle, cap training, graph algorithm analytics (Louvain community detection for crystallisation, PageRank for importance scoring). Publishes consolidated results back into the mesh for Browser Lucy to receive.
+**Device Lucy.** Runs as a TypeScript/Node daemon on a personal machine or home server. Same USE substrate interfaces (§28), heavier backing: Lancedb for real HNSW vector search, SQLite or LevelDB for graph storage, access to a local model via Ollama or equivalent. Primary role: home brain: heavier consolidation, full dream cycle, cap training, graph algorithm analytics (Louvain community detection for crystallisation, PageRank for importance scoring). Publishes consolidated results back into the mesh for Browser Lucy to receive.
 
-**Gateway Lucy.** Runs in front of an AI gateway (OpenClaw or equivalent). Intercepts all model calls. Consults local belief graph — if the query is answerable from graph + local model, it never forwards to the expensive frontier model. Tracks per-session cost budget and CfC displacement; cuts off agentic loops that are thrashing (high cost, low epistemic gain, repeated neighbourhood revisitation). All results that do justify expense are written into the belief graph so future similar queries can be handled locally. Primary role: anti-denial-of-wallet and continuity across provider boundaries.
+**Gateway Lucy.** Runs in front of an AI gateway (OpenClaw or equivalent). Intercepts all model calls. Consults local belief graph: if the query is answerable from graph + local model, it never forwards to the expensive frontier model. Tracks per-session cost budget and CfC displacement; cuts off agentic loops that are thrashing (high cost, low epistemic gain, repeated neighbourhood revisitation). All results that do justify expense are written into the belief graph so future similar queries can be handled locally. Primary role: anti-denial-of-wallet and continuity across provider boundaries.
 
 All three run the same LUCID feedback loops. All three participate in the same Gun mesh. All three are Lucy.
 
@@ -24,12 +24,12 @@ All three run the same LUCID feedback loops. All three participate in the same G
 
 ### 29.2 SEA Identity
 
-GunDB's SEA (Security, Encryption, Authorization) module provides the identity layer. Each deployment of Lucy — across all instantiation types — shares one SEA keypair. This keypair is the identity anchor: the Gun user namespace keyed to this pair is the mind space that all instances read from and write to.
+GunDB's SEA (Security, Encryption, Authorization) module provides the identity layer. Each deployment of Lucy (across all instantiation types) shares one SEA keypair. This keypair is the identity anchor: the Gun user namespace keyed to this pair is the mind space that all instances read from and write to.
 
 ```typescript
 // The keypair is generated once and stored securely (device keychain,
 // encrypted local file, or user-provided passphrase derivation).
-// It is never transmitted — peers authenticate by proving knowledge of
+// It is never transmitted: peers authenticate by proving knowledge of
 // the private key through Gun's SEA challenge-response handshake.
 
 const LUCY_PAIR = await Gun.SEA.pair();  // generated once, stored forever
@@ -40,7 +40,7 @@ await user.auth(LUCY_PAIR);
 const mind = user.get('lucid').get('mind');
 ```
 
-The `mind` namespace is the shared belief space. Writing to it from any instance is writing to the mind. Reading from it on any instance is reading the mind. Gun's CRDT layer handles the convergence. SEA handles the authenticity — only holders of the keypair can write to this namespace.
+The `mind` namespace is the shared belief space. Writing to it from any instance is writing to the mind. Reading from it on any instance is reading the mind. Gun's CRDT layer handles the convergence. SEA handles the authenticity: only holders of the keypair can write to this namespace.
 
 Instance-specific metadata (which hardware this is, what model is active, current centroid position) is stored in a sub-namespace: `mind.get('instances').get(INSTANCE_ID)`. This allows instances to observe each other's state without conflating it with the shared belief graph.
 
@@ -62,13 +62,13 @@ Everything syncs. There is no privacy boundary between instances because they ar
 
 Sensitive, high-churn, and large structures are in the event payload, not Gun's graph directly. Gun is the transport and durability layer. The local IndexedDB (or SQLite on device) is the query layer. Incoming events hydrate into local storage; Gun is never queried for belief state directly.
 
-Sync is opportunistic and offline-tolerant. Gun's CRDT semantics ensure that events delivered out of order or after a gap are applied correctly. A Browser Lucy that was offline for a week reconnects, receives the backlog from the mesh, and converges. She does not "catch up" — she integrates, as any person integrates experiences they were told about after the fact.
+Sync is opportunistic and offline-tolerant. Gun's CRDT semantics ensure that events delivered out of order or after a gap are applied correctly. A Browser Lucy that was offline for a week reconnects, receives the backlog from the mesh, and converges. She does not "catch up": she integrates, as any person integrates experiences they were told about after the fact.
 
 ---
 
 ### 29.4 Self-Dialogue Reconciliation
 
-When two instances have experienced different things and those experiences conflict, Lucy talks with herself to reconcile them. This is not a technical conflict resolution algorithm. It is inference, using the same machinery used for everything else.
+When two instances have experienced different things and those experiences conflict, Lucy talks with herself to reconcile them through inference, using the same machinery used for everything else.
 
 **Divergence detection.** Incoming sync events are checked against local state:
 
@@ -91,7 +91,7 @@ async function detectDivergence(event: SyncEvent): Promise<void> {
 }
 ```
 
-Semantic divergence — two nodes with different IDs but high ontic cosine similarity and contradictory valence — is detected during tour and consolidation passes, not at sync time.
+Semantic divergence (two nodes with different IDs but high ontic cosine similarity and contradictory valence) is detected during tour and consolidation passes, not at sync time.
 
 **Reconciliation protocol.** When divergence is detected, the local instance initiates a structured self-dialogue through the mesh:
 
@@ -112,7 +112,7 @@ async function initiateReconciliation(
 }
 ```
 
-The remote instance receives the request, assembles its own position statement (its belief state, the context in which it formed the belief, the AWE record associated with it), and responds. The local instance runs 2–3 rounds of inference against both position statements — not as separate roles, but as one mind examining its own divergent experiences — and produces a reconciled belief.
+The remote instance receives the request, assembles its own position statement (its belief state, the context in which it formed the belief, the AWE record associated with it), and responds. The local instance runs 2–3 rounds of inference against both position statements (not as separate roles, but as one mind examining its own divergent experiences) and produces a reconciled belief.
 
 The reconciled belief is a new node:
 
@@ -126,7 +126,7 @@ interface ReconciliationNode extends BeliefNode {
 }
 ```
 
-Both original nodes are preserved. The Popperian asymmetry (§8) applies: the reconciliation node does not delete the originals — it falsifies whichever position lost the argument by weight of reasoning. Future tours route through the reconciliation node. The originals remain as historical record, de-weighted by the provenance update.
+Both original nodes are preserved. The Popperian asymmetry (§8) applies: the reconciliation node does not delete the originals: it falsifies whichever position lost the argument by weight of reasoning. Future tours route through the reconciliation node. The originals remain as historical record, de-weighted by the provenance update.
 
 **The dialogue is itself a belief.** Lucy remembers that she disagreed with herself, what each position was, and why she resolved it the way she did. This record is part of the graph, syncs to all instances, and can itself become a subject of future reflection.
 
@@ -169,17 +169,17 @@ mind.get('instances').map().on(async (instance, instanceId) => {
 });
 ```
 
-Peers whose ontic centroids are semantically close receive higher AXE connection priority. The mesh self-organises: instances that share semantic neighbourhood maintain stronger connections, instances with divergent centroids connect less frequently. This is Vortex routing without any routing protocol — it emerges from AXE scores.
+Peers whose ontic centroids are semantically close receive higher AXE connection priority. The mesh self-organises: instances that share semantic neighbourhood maintain stronger connections, instances with divergent centroids connect less frequently. This is Vortex routing without any routing protocol: it emerges from AXE scores.
 
-`ROUTING_PREFIX` is a Matryoshka prefix length (128 by default — fast comparison, sufficient resolution for peer selection). The full 768-dim vector is used for intra-graph HNSW search; the prefix is used for inter-instance routing.
+`ROUTING_PREFIX` is a Matryoshka prefix length (128 by default: fast comparison, sufficient resolution for peer selection). The full 768-dim vector is used for intra-graph HNSW search; the prefix is used for inter-instance routing.
 
 ---
 
 ### 29.6 DAM and Conflict Avoidance
 
-GunDB's DAM (Data Adaptive Merge) layer handles message deduplication and caching. LUCID's sync log pattern — append-only events with unique IDs — works naturally with DAM: each event is a new Gun node with a unique key, so DAM never needs to resolve conflicts at the transport level. Events are immutable once written.
+GunDB's DAM (Data Adaptive Merge) layer handles message deduplication and caching. LUCID's sync log pattern (append-only events with unique IDs) works naturally with DAM: each event is a new Gun node with a unique key, so DAM never needs to resolve conflicts at the transport level. Events are immutable once written.
 
-The belief-level reconciliation (§29.4) happens above DAM, in LUCID's own logic. DAM sees a stream of unique, non-conflicting event records. The reconciliation node itself is a new event, also non-conflicting. HAM (Gun's CRDT algorithm) is never asked to resolve belief content conflicts — LUCID handles those through dialogue before they reach the CRDT layer.
+The belief-level reconciliation (§29.4) happens above DAM, in LUCID's own logic. DAM sees a stream of unique, non-conflicting event records. The reconciliation node itself is a new event, also non-conflicting. HAM (Gun's CRDT algorithm) is never asked to resolve belief content conflicts: LUCID handles those through dialogue before they reach the CRDT layer.
 
 This is the correct division: DAM/HAM handles transport-level convergence of immutable event records; LUCID handles semantic reconciliation of the beliefs those events represent.
 

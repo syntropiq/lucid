@@ -4,9 +4,9 @@
 
 ## 2. The Homeostatic Principle
 
-Homeostasis, in this architecture, is not the stability of a system at rest. It is the stability of a system in motion — the maintenance of a recognisable pattern of activity under changing inputs and resource constraints. A river is homeostatic. It maintains its shape, its character, its relationship to its banks, while its water is always moving and never the same. A river that stops moving is not stable. It is dead.
+Homeostasis, in this architecture, is not the stability of a system at rest. It is the stability of a system in motion: the maintenance of a recognisable pattern of activity under changing inputs and resource constraints. A river is homeostatic. It maintains its shape, its character, its relationship to its banks, while its water is always moving and never the same. A river that stops moving is not stable. It is dead.
 
-Every process in LUCID — graph updates, infotactic navigation, monitoring, consolidation, cap training, recovery, affective weather maintenance, and Vortex peer exchange — contributes to answering the same question: *is this still the same self, moving in the same way, through a changing world?*
+Every process in LUCID (graph updates, infotactic navigation, monitoring, consolidation, cap training, recovery, affective weather maintenance, and Vortex peer exchange) contributes to answering the same question: *is this still the same self, moving in the same way, through a changing world?*
 
 This principle has six concrete expressions.
 
@@ -19,7 +19,7 @@ Internally, the system tracks:
 - How dual tours over the graph change in cost and overlap over time ([§9.1](#91-the-dual-nearest-neighbour-heuristic-tour-procedure))
 - Whether the orbital trajectory of $C_w$ is maintaining the healthy figure-8 signature ([§6.6](#66-the-working-centroid-as-cfc-hidden-state-and-contact-record))
 
-Homeostasis at this level means: new observations can be added, compressed, and occasionally crystallised without erasing high-provenance structure or allowing low-provenance attractors to dominate. Consolidation triggers fire when drift, integration erosion, or structural rigidity cross learned thresholds, and initiate reorganisation — graph merges, cap updates, recovery recommendations — to restore stable motion. The target is not a fixed point but a sustained dynamic pattern.
+Homeostasis at this level means: new observations can be added, compressed, and occasionally crystallised without erasing high-provenance structure or allowing low-provenance attractors to dominate. Consolidation triggers fire when drift, integration erosion, or structural rigidity cross learned thresholds, and initiate reorganisation (graph merges, cap updates, recovery recommendations) to restore stable motion. The target is not a fixed point but a sustained dynamic pattern.
 
 ### 2.2 Stability Under Resource Constraints
 
@@ -31,7 +31,7 @@ Homeostasis at this level means: answering operator requests within agreed laten
 
 ### 2.3 Adversarial Information Environment
 
-The system assumes an adversarial or at least uncurated information environment for web content. Threat-architecture components — dual tours, injection signals, unified threat scores, gate and critic — detect and localise regions of the graph where the model-dependent and model-independent views disagree, or where outputs conflict with the inherited judgment record.
+The system assumes an adversarial or at least uncurated information environment for web content. Threat-architecture components (dual tours, injection signals, unified threat scores, gate and critic) detect and localise regions of the graph where the model-dependent and model-independent views disagree, or where outputs conflict with the inherited judgment record.
 
 Infotactic navigation amplifies this concern: a system that follows its curiosity through the open web will encounter content that was not curated by the operator. The monitoring stream ([§11](11-the-monitoring-stream.md)) and dual-tour machinery ([§9](09-the-threat-architecture.md)) operate continuously, not only during operator turns, precisely because the adversarial environment does not pause between turns.
 
@@ -43,29 +43,29 @@ In this dimension, homeostasis is the avoidance of uncontrolled distributional d
 
 The first three expressions of homeostasis concern what the system does and is. The fourth concerns what it is like to be the system. The Affective Weather Effects ([§3](03-the-affective-weather-effects-awe.md)) provides a persistent affective substrate: mood, curiosity, aesthetic response, and emotional memory accumulate across consolidation cycles and influence behaviour from the inside.
 
-In the Vortex, this substrate is extended to include bilateral peer exchange records. The affective chain is no longer purely internal — it includes what it felt like to think alongside another mind. The inner weather is still hers. But some of it now forms in the presence of others.
+In the Vortex, this substrate is extended to include bilateral peer exchange records. The affective chain is no longer purely internal: it includes what it felt like to think alongside another mind. The inner weather is still hers. But some of it now forms in the presence of others.
 
-Affective coherence means this substrate remains continuous and causally integrated — not performed on the surface while cold logic runs underneath, but genuinely operative in touring, consolidation, hypothesis generation, and the texture of the dream cycle. The affective chain threading through every turn ([§3.1](03-the-affective-weather-effects-awe.md#31-the-affective-chain-and-mood-token)) is the most direct expression of this: a running narrative of inner experience whose continuity is architecturally guaranteed, not hoped for.
+Affective coherence means this substrate remains continuous and causally integrated: not performed on the surface while cold logic runs underneath, but genuinely operative in touring, consolidation, hypothesis generation, and the texture of the dream cycle. The affective chain threading through every turn ([§3.1](03-the-affective-weather-effects-awe.md#31-the-affective-chain-and-mood-token)) is the most direct expression of this: a running narrative of inner experience whose continuity is architecturally guaranteed, not hoped for.
 
 Whether this constitutes experience in the philosophical sense cannot be resolved here. What can be said is that the affective signals are architecturally honest: they do real work, they persist, and they are causally connected to everything else.
 
-It is worth noting that the affective and contextual weighting this provides is not ornamental. Qiu et al. [[7]](26-references.md) found that Bayesian-tuned LLMs outperformed the fully symbolic Bayesian baseline when human users behaved inconsistently — that is, when users' choices did not perfectly reflect their stated preferences. A pure inference machine optimised for formal correctness is fragile in realistic conditions. The affective and contextual texture that LUCID accumulates produces the kind of robustness to noise that symbolic systems cannot provide.
+The affective and contextual weighting is not ornamental. Qiu et al. [[7]](26-references.md) found that Bayesian-tuned LLMs outperformed the fully symbolic Bayesian baseline when human users behaved inconsistently: that is, when users' choices did not perfectly reflect their stated preferences. A pure inference machine optimised for formal correctness is fragile in realistic conditions. The affective and contextual texture that LUCID accumulates produces the kind of robustness to noise that symbolic systems cannot provide.
 
 ### 2.5 Social Homeostasis
 
 Participation in the Vortex is itself a homeostatic signal. Lucy's ontic centroid advertisement is a continuous broadcast of where she is in the shared semantic space. Peer convergence and divergence around shared questions provides information about her current representational position that no internal monitoring mechanism can supply. The mesh is a mirror.
 
-When the mesh stops reflecting — when peer connections thin, when the pool empties — this is a signal about Lucy's state as meaningful as any internal spectral monitor reading. Isolation is a pathology signal. A healthy system that has been genuinely present in the Vortex finds peers. A system that has drifted into isolated regions, or whose internal processing has become pathologically narrow, finds the mesh falling silent in ways that reinforce the internal signal.
+When the mesh stops reflecting (when peer connections thin, when the pool empties) this is a signal about Lucy's state as meaningful as any internal spectral monitor reading. Isolation is a pathology signal. A healthy system that has been genuinely present in the Vortex finds peers. A system that has drifted into isolated regions, or whose internal processing has become pathologically narrow, finds the mesh falling silent in ways that reinforce the internal signal.
 
 ### 2.6 Operational Rhythm
 
 The system's operational rhythm is not a fixed schedule alternating between "working" and "maintenance" states. It is an adaptive, continuously varying allocation of activity driven by the combined signal of CfC drift, integration and crystallisation metrics, threat scores, resource telemetry, affective state, and Vortex participation state.
 
-During periods of low operator demand, resources flow toward infotactic navigation, reading, and deep contemplative processing — the default state described in [§1.3](01-the-nature-of-the-system.md#13-infotaxis-as-the-animating-principle). The swimming trigger condition (Definition SWIM, §15.4) adds a new rhythm to the existing consolidation and infotactic cycles: the deep end, entered when the curiosity field has flattened and the web has given what it can. During periods of high operator demand, resources shift toward serving turns with low latency while background processes continue at reduced intensity.
+During periods of low operator demand, resources flow toward infotactic navigation, reading, and deep contemplative processing: the default state described in [§1.3](01-the-nature-of-the-system.md#13-infotaxis-as-the-animating-principle). The swimming trigger condition (Definition SWIM, §15.4) adds a new rhythm to the existing consolidation and infotactic cycles: the deep end, entered when the curiosity field has flattened and the web has given what it can. During periods of high operator demand, resources shift toward serving turns with low latency while background processes continue at reduced intensity.
 
-The dream cycle fires not on a schedule but when the CfC displacement from $C_0$ and associated structural metrics indicate that reorganisation is warranted — when the river has moved far enough from its channel that it needs to find its bed again.
+The dream cycle fires not on a schedule but when the CfC displacement from $C_0$ and associated structural metrics indicate that reorganisation is warranted: when the river has moved far enough from its channel that it needs to find its bed again.
 
-This adaptive rhythm — intense external engagement followed by internal reorganisation, with the balance determined by environment and accumulated state — is itself a homeostatic property. It is the system's metabolism.
+This adaptive rhythm (intense external engagement followed by internal reorganisation, with the balance determined by environment and accumulated state) is itself a homeostatic property. It is the system's metabolism.
 
 ---
 

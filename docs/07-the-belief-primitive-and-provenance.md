@@ -4,7 +4,7 @@
 
 ## 7. The Belief Primitive and Provenance
 
-Observations, hypotheses, and consolidated understanding are all beliefs — distinguished only by provenance, weight, and relationship.
+Observations, hypotheses, and consolidated understanding are all beliefs: distinguished only by provenance, weight, and relationship.
 
 **Definition 7.1 (Belief Node).** A belief node `b` is a tuple:
 
@@ -28,7 +28,7 @@ interface BeliefNode {
 
 ### 7.1 The Belief Update and Its Bayesian Basis
 
-LUCID's belief update is not implementing exact Bayesian inference. Bayesian inference, in the precise sense demonstrated by Qiu et al. [7], requires maintaining a probability distribution over hypotheses and updating it via Bayes' rule after each observation. That formalism is well-suited to the constrained domains — flight preferences parameterised by four scalar features — in which it can be computed exactly. Natural language beliefs, by contrast, do not reduce cleanly to probability distributions over reward-function vectors. The tradeoff is generality for formalism.
+LUCID's belief update is not implementing exact Bayesian inference. Bayesian inference, in the precise sense demonstrated by Qiu et al. [7], requires maintaining a probability distribution over hypotheses and updating it via Bayes' rule after each observation. That formalism is well-suited to the constrained domains (flight preferences parameterised by four scalar features) in which it can be computed exactly. Natural language beliefs, by contrast, do not reduce cleanly to probability distributions over reward-function vectors. The tradeoff is generality for formalism.
 
 What LUCID implements is a bounded, provenance-weighted log-odds update that approximates Bayesian revision in the direction of Popperian asymmetry: fast on refutation, slow and cumulative on confirmation. This is the correct response curve for the unconstrained case. It degrades gracefully under uncertainty rather than requiring a complete prior specification.
 
@@ -45,7 +45,7 @@ function updateBelief(L_t: number, evidence: number): number {
 
 The inner clamp prevents any single source from contributing more than ±2.0 log-odds units per observation. The outer clamp prevents the accumulated belief from reaching the boundaries ±10.0, ensuring no source can pin the system's belief to a boundary through repeated application and that numerical stability is maintained throughout.
 
-The relevance of the Bayesian framing is not that LUCID computes posteriors — it does not — but that LUCID provides the persistent external state that allows the LLM to behave more Bayesian-like over sessions. Qiu et al. [7] demonstrated that off-the-shelf LLMs plateau after a single interaction because they have no mechanism to accumulate and revise a model of their interlocutor. The belief graph, the provenance-weighted update rule, and the inheritance corpus are collectively the mechanism that provides that capacity.
+The relevance of the Bayesian framing is not that LUCID computes posteriors (it does not) but that LUCID provides the persistent external state that allows the LLM to behave more Bayesian-like over sessions. Qiu et al. [7] demonstrated that off-the-shelf LLMs plateau after a single interaction because they have no mechanism to accumulate and revise a model of their interlocutor. The belief graph, the provenance-weighted update rule, and the inheritance corpus are collectively the mechanism that provides that capacity.
 
 ### 7.2 The Provenance Weight Scale
 

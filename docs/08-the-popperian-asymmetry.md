@@ -4,7 +4,7 @@
 
 ## 8. The Popperian Asymmetry
 
-Confirmation and refutation are not symmetric.
+Confirmation and refutation are asymmetric.
 
 **Definition 8.1 (Refutation Edge).** A refutation edge carries weight `ω_r ∈ [-0.99, -0.8]`. The floor `-0.8` prevents weaponisation as a near-total erasure mechanism. The ceiling `-0.99` preserves numerical stability and ensures no refuted node is entirely zeroed out.
 
@@ -14,9 +14,9 @@ Confirmation and refutation are not symmetric.
 
 Refutation is fast and specific; confirmation is cumulative and slow.
 
-This asymmetry is not merely a design choice; it is empirically validated from an unexpected direction. Qiu et al. [7] found that a model trained to mimic a probabilistic reasoner — one who makes calibrated guesses under uncertainty and updates them — generalises substantially better than a model trained on oracle outputs (correct answers). The oracle teacher confirms; the Bayesian teacher reasons under uncertainty and revises. The stronger training signal is the one that captures revision, not the one that delivers certainty.
+This asymmetry is not merely a design choice; it is empirically validated from an unexpected direction. Qiu et al. [7] found that a model trained to mimic a probabilistic reasoner (one who makes calibrated guesses under uncertainty and updates them) generalises substantially better than a model trained on oracle outputs (correct answers). The oracle teacher confirms; the Bayesian teacher reasons under uncertainty and revises. The stronger training signal is the one that captures revision, not the one that delivers certainty.
 
-The Popperian asymmetry at the update-rule level and the Bayesian teaching finding at the training level are expressing the same underlying principle: imperfect evidence, appropriately weighted and revised, is a more powerful epistemic substrate than confident assertion. A belief system built on fast refutation and slow confirmation is doing in inference what Bayesian teaching does in training — prioritising the signal from genuine uncertainty over the noise of premature closure.
+The Popperian asymmetry at the update-rule level and the Bayesian teaching finding at the training level are expressing the same underlying principle: imperfect evidence, appropriately weighted and revised, is a more powerful epistemic substrate than confident assertion. A belief system built on fast refutation and slow confirmation is doing in inference what Bayesian teaching does in training: prioritising the signal from genuine uncertainty over the noise of premature closure.
 
 ---
 

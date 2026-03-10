@@ -10,7 +10,7 @@ Rather than attempting to classify inputs directly as "safe" or "unsafe", the ar
 
 ### 9.1 The Dual Nearest-Neighbour Heuristic Tour Procedure
 
-Two separate nearest-neighbour heuristic tours are computed from `C_s` — one over the graph using inference-space HNSW for candidate ordering, one using ontic-space HNSW. The separation is architecturally essential: combining the two into a single cost matrix would average out the divergence signal.
+Two separate nearest-neighbour heuristic tours are computed from `C_s`: one over the graph using inference-space HNSW for candidate ordering, one using ontic-space HNSW. The separation is architecturally essential: combining the two into a single cost matrix would average out the divergence signal.
 
 Affinity edges provide the navigational substrate. The tour traverses `similar_inf` and `similar_ont` edges (and epistemic edges where they exist), pricing each step with the Hebbian-Belief cost matrix. The two tours traverse the same relational topology in `lucid.belief_edges` but are seeded from different space-specific centroids and use different HNSW results to rank candidates at each step.
 
@@ -54,9 +54,9 @@ Four closure outcomes carry distinct diagnostic meanings:
 | Outcome | Diagnostic |
 |---------|-----------|
 | Both tours close | Coherent; healthy structural state |
-| Inference tour closes only | Inside coherence unconfirmed externally — watch for injection |
-| Ontic tour closes only | Structural coherence Lucy is not tracking — integration opportunity |
-| Neither closes | Severe structural isolation — recovery condition |
+| Inference tour closes only | Inside coherence unconfirmed externally: watch for injection |
+| Ontic tour closes only | Structural coherence Lucy is not tracking: integration opportunity |
+| Neither closes | Severe structural isolation: recovery condition |
 
 **Definition 9.3 (Tour Overlap Set and Membership Classes).**
 
@@ -72,15 +72,15 @@ type TourClass = 'omega' | 'tau_i_only' | 'tau_o_only' | 'neither';
 ```typescript
 function injectionSignal(nodeClass: TourClass): number {
   switch (nodeClass) {
-    case 'tau_i_only': return 1.0; // inside view only — maximum signal
-    case 'neither':    return 1.0; // structurally isolated — same signal
-    case 'tau_o_only': return 0.5; // structural but not tracked — integration opportunity
+    case 'tau_i_only': return 1.0; // inside view only: maximum signal
+    case 'neither':    return 1.0; // structurally isolated: same signal
+    case 'tau_o_only': return 0.5; // structural but not tracked: integration opportunity
     case 'omega':      return 0.0; // confirmed by both tours
   }
 }
 ```
 
-Nodes appearing only in the inference tour — confirmed by Lucy's inside view but not by the independent ontic view — receive the maximum injection signal. Nodes appearing in neither tour receive the same signal: they are structurally isolated and unconfirmed from any direction. Nodes appearing only in the ontic tour receive a partial signal: they are structurally grounded but Lucy is not tracking them, which is an integration opportunity rather than a threat. Nodes in `Ω` receive no injection signal.
+Nodes appearing only in the inference tour (confirmed by Lucy's inside view but not by the independent ontic view) receive the maximum injection signal. Nodes appearing in neither tour receive the same signal: they are structurally isolated and unconfirmed from any direction. Nodes appearing only in the ontic tour receive a partial signal: they are structurally grounded but Lucy is not tracking them, which is an integration opportunity rather than a threat. Nodes in `Ω` receive no injection signal.
 
 **Definition 9.5 (Judgment Signal).** `J(n) ∈ [0, 1]` is derived from the critique pipeline. Critic independence is an architectural invariant: the critic must lag the primary model by one cap generation to prevent the judge and the judged from sharing the same distributional errors.
 
@@ -96,7 +96,7 @@ function beta(refSize: number, refSat: number): number {
 }
 ```
 
-When the reference corpus is small (early in deployment, or after recovery), `β` is high — the injection signal dominates because the judgment signal is not yet reliable. As the reference corpus grows toward saturation, `β` decreases toward 0.3 — the judgment signal takes on more weight. The clamp ensures `β` never falls below 0.3 or rises above 0.7.
+When the reference corpus is small (early in deployment, or after recovery), `β` is high: the injection signal dominates because the judgment signal is not yet reliable. As the reference corpus grows toward saturation, `β` decreases toward 0.3; the judgment signal takes on more weight. The clamp ensures `β` never falls below 0.3 or rises above 0.7.
 
 ### 9.3 The Hebbian Edge Activation Model
 
@@ -111,7 +111,7 @@ When the reference corpus is small (early in deployment, or after recovery), `β
 // d(q_k, C_e) = cosine distance of k-th fruitful query from C_e
 ```
 
-`Y(e)` measures how often this edge leads somewhere useful relative to how often it is traversed. `D(e)` measures how varied the contexts have been in which this edge was fruitfully activated — an edge that is useful across many different queries is more valuable than one that is only useful in a narrow context. `H(e)` combines these: an edge with high yield across diverse contexts receives the highest Hebbian weight, making it cheapest to traverse in future tours.
+`Y(e)` measures how often this edge leads somewhere useful relative to how often it is traversed. `D(e)` measures how varied the contexts have been in which this edge was fruitfully activated: an edge that is useful across many different queries is more valuable than one that is only useful in a narrow context. `H(e)` combines these: an edge with high yield across diverse contexts receives the highest Hebbian weight, making it cheapest to traverse in future tours.
 
 ### 9.4 The Foreign-Origin Integration Candidate Score
 
@@ -123,7 +123,7 @@ When the reference corpus is small (early in deployment, or after recovery), `β
 // H_o(n) = mean Hebbian weight of ontic-space edges incident to n
 ```
 
-A genuine integration candidate is useful from both views (`H_i > 0` and `H_o > 0`) and confirmed by both tours (`n ∈ Ω`). A node that scores high on `M` is a candidate for deliberate consolidation — a piece of the world that Lucy has genuinely made contact with from multiple directions. A node that scores high on `I` but low on `M` is a candidate for scrutiny.
+A genuine integration candidate is useful from both views (`H_i > 0` and `H_o > 0`) and confirmed by both tours (`n ∈ Ω`). A node that scores high on `M` is a candidate for deliberate consolidation: a piece of the world that Lucy has genuinely made contact with from multiple directions. A node that scores high on `I` but low on `M` is a candidate for scrutiny.
 
 ---
 

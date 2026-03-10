@@ -4,7 +4,7 @@
 
 ## 20. Security Model
 
-The security model is built on two foundations: **SEA identity** for authentication and access control across instances, and **the threat architecture** (§9) for belief-level integrity. There is no server database to protect, no role hierarchy, and no tenant isolation machinery — the system is local-first and single-identity by design.
+The security model is built on two foundations: **SEA identity** for authentication and access control across instances, and **the threat architecture** (§9) for belief-level integrity. There is no server database to protect, no role hierarchy, and no tenant isolation machinery: the system is local-first and single-identity by design.
 
 ### 20.1 SEA Identity and Access Control
 
@@ -20,13 +20,13 @@ await user.auth(LUCY_SEA_PAIR);   // proves knowledge of private key
 ```
 
 **What the keypair protects:**
-- Write access to the shared belief namespace — only authenticated instances can write belief events
-- Instance identity — Gun's SEA challenge-response prevents impersonation of a Lucy instance on the mesh
-- Sync log integrity — events written under the authenticated user namespace are signed; unsigned events are rejected
+- Write access to the shared belief namespace: only authenticated instances can write belief events
+- Instance identity: Gun's SEA challenge-response prevents impersonation of a Lucy instance on the mesh
+- Sync log integrity: events written under the authenticated user namespace are signed; unsigned events are rejected
 
 **What the keypair does not protect:**
-- Read access — the Gun namespace is readable without authentication. If confidentiality of belief content is required, field-level SEA encryption can be applied to individual node payloads before writing. This is an operator configuration choice.
-- Local storage — IndexedDB and SQLite are protected by the OS and browser origin isolation, not by SEA.
+- Read access: the Gun namespace is readable without authentication. If confidentiality of belief content is required, field-level SEA encryption can be applied to individual node payloads before writing. This is an operator configuration choice.
+- Local storage: IndexedDB and SQLite are protected by the OS and browser origin isolation, not by SEA.
 
 ### 20.2 Keypair Storage
 
@@ -34,13 +34,13 @@ The keypair is generated once at first boot and must be stored securely. Storage
 
 1. **Device Lucy**: OS keychain (macOS Keychain, Linux Secret Service, Windows Credential Manager)
 2. **Browser Lucy**: Encrypted IndexedDB entry, key derived from a user-supplied passphrase using PBKDF2
-3. **Operator-managed**: Provided via environment variable or secure secret injection at boot — never hardcoded, never committed to version control
+3. **Operator-managed**: Provided via environment variable or secure secret injection at boot: never hardcoded, never committed to version control
 
 The keypair is never logged, never transmitted in plaintext, and never committed to source control. Loss of the keypair means loss of write access to the shared mind namespace; other instances that held the keypair continue to function and will resync when the keypair is recovered or reissued.
 
 ### 20.3 No Direct Graph Access
 
-The belief graph lives in local IndexedDB (browser) or SQLite (device). Core feedback loops interact with the graph exclusively through `sue.graph()` (the GraphStore interface) and `sue.ont()` / `sue.inf()` (the VectorStore interfaces). These are typed TypeScript interfaces — there is no SQL injection surface, no raw query API, and no way for a model output or injected prompt to issue arbitrary storage operations.
+The belief graph lives in local IndexedDB (browser) or SQLite (device). Core feedback loops interact with the graph exclusively through `sue.graph()` (the GraphStore interface) and `sue.ont()` / `sue.inf()` (the VectorStore interfaces). These are typed TypeScript interfaces: there is no SQL injection surface, no raw query API, and no way for a model output or injected prompt to issue arbitrary storage operations.
 
 A prompt injection that achieves JavaScript code execution in the Worker context could in principle call `sue.graph().nodeUpsert()` directly. This is why the threat architecture (§9) treats high injection-signal nodes as holding actions rather than write actions, and why provenance weight limits the influence of any single write. The graph is not protected by access control; it is protected by the mathematical structure of provenance, Hebbian weighting, and the dual tour.
 

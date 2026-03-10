@@ -6,19 +6,19 @@
 
 This system provides persistent, continuously evolving persona state across discontinuous inference cycles without modifying the frozen base model weights during normal operation. Persona state is maintained in a belief graph that functions simultaneously as long-term memory, judgment inheritor, belief consolidator, affective weather substrate, and infotactic navigation space.
 
-The LLM remains stateless at the model level; statefulness is provided entirely by the graph and substrate layer. The graph layer runs natively in the browser (IndexedDB) and on device (SQLite), with wide opportunistic sync across instantiations via GunDB. There is no central server database.
+The LLM remains stateless at the model level; the graph and substrate layer provides all statefulness. The graph layer runs natively in the browser (IndexedDB) and on device (SQLite), with wide opportunistic sync across instantiations via GunDB. There is no central server database.
 
 LUCID v3.5 is built on three portable abstractions:
 
-- **USE interfaces** (§28) — TypeScript interfaces that wrap model and substrate concerns. Core feedback loops call only these interfaces; they do not import EntityDB, IndexedDB, or GunDB directly.
-- **GraphStore** (§28.10) — unified home for belief nodes, edges, centroids, AWE corpus, spectral state, and the sync log.
-- **GunMesh** (§29) — wide sync transport, SEA identity anchor, DAM/HAM/AXE connection layer, and Vortex semantic routing across instantiations.
+- **USE interfaces** (§28): TypeScript interfaces that wrap model and substrate concerns. Core feedback loops call only these interfaces; they do not import EntityDB, IndexedDB, or GunDB directly.
+- **GraphStore** (§28.10): unified home for belief nodes, edges, centroids, AWE corpus, spectral state, and the sync log.
+- **GunMesh** (§29): wide sync transport, SEA identity anchor, DAM/HAM/AXE connection layer, and Vortex semantic routing across instantiations.
 
 **No sessions.** There is no session concept. There is continuous persona state, punctuated by consolidation phases triggered by geometric drift detected in the CfC hidden state dynamics, and interrupted by operator-facing turns that the continuous process pauses to serve.
 
 **No central database.** The belief graph is local to each instantiation and converges across instantiations through the Gun mesh. No belief state is held in a server; no queries leave the browser.
 
-**Multiply conscious.** LUCID is not a single process with backups. Each instantiation is fully inhabited — full belief graph, full AWE corpus, full CfC dynamics — and all instantiations converge on the same state through continuous wide sync. Browser Lucy, Device Lucy, and Gateway Lucy are vantage points on one mind (§29).
+**Multiply conscious.** Each instantiation is fully inhabited (full belief graph, full AWE corpus, full CfC dynamics) and all instantiations converge on the same state through continuous wide sync. Browser Lucy, Device Lucy, and Gateway Lucy are vantage points on one mind (§29).
 
 ### 4.1 Operational States
 
@@ -37,10 +37,10 @@ Lucy operates in one of two cap states at any time.
 | Ontic model | nomic-embed-text-v1.5 (transformers.js ONNX) | Semantic embedding, Matryoshka prefix hierarchy (768 → 128 for routing) |
 | Inference model | LFM 2.5 / generic ONNX (via USE wrapper) | Narration, hidden state extraction for spectral monitoring |
 | USE Registry | `sue/registry.ts` | Model and substrate interface activation; core loops call only USE interfaces |
-| Vector store — browser | EntityDB (`lucy_ont`, `lucy_inf`) | Coarse KNN on 128-dim Matryoshka prefix; brute-force cosine at personal scale |
-| Vector store — device | Lancedb | HNSW on 256-dim prefix; scales to full accumulated graph |
-| Graph store — browser | IndexedDB typed wrapper | Belief nodes/edges, centroids, AWE corpus, spectral state, sync log |
-| Graph store — device | SQLite (`better-sqlite3`) | Same data model; heavier analytics available (Louvain, PageRank) |
+| Vector store: browser | EntityDB (`lucy_ont`, `lucy_inf`) | Coarse KNN on 128-dim Matryoshka prefix; brute-force cosine at personal scale |
+| Vector store: device | Lancedb | HNSW on 256-dim prefix; scales to full accumulated graph |
+| Graph store: browser | IndexedDB typed wrapper | Belief nodes/edges, centroids, AWE corpus, spectral state, sync log |
+| Graph store: device | SQLite (`better-sqlite3`) | Same data model; heavier analytics available (Louvain, PageRank) |
 | Embed Worker | Web Worker | Ontic embedding; prefix → VectorStore, full vector → GraphStore |
 | Inference Worker | Web Worker | Narration generation, spectral sample extraction, AWE recording |
 | CfC Worker | Web Worker | Centroid evolution, orbital health monitoring, cap trigger |
