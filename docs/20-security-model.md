@@ -42,7 +42,7 @@ The keypair is never logged, never transmitted in plaintext, and never committed
 
 The belief graph lives in local IndexedDB (browser) or SQLite (device). Core feedback loops interact with the graph exclusively through `sue.graph()` (the GraphStore interface) and `sue.ont()` / `sue.inf()` (the VectorStore interfaces). These are typed TypeScript interfaces: there is no SQL injection surface, no raw query API, and no way for a model output or injected prompt to issue arbitrary storage operations.
 
-A prompt injection that achieves JavaScript code execution in the Worker context could in principle call `sue.graph().nodeUpsert()` directly. This is why the threat architecture (§9) treats high injection-signal nodes as holding actions rather than write actions, and why provenance weight limits the influence of any single write. The graph is not protected by access control; it is protected by the mathematical structure of provenance, Hebbian weighting, and the dual tour.
+A prompt injection that achieves JavaScript code execution in the Worker context could in principle call `sue.graph().nodeUpsert()` directly. This is why the threat architecture (§9) treats high injection-signal nodes as holding actions rather than write actions, and why provenance weight limits the influence of any single write. The graph is protected by the mathematical structure of provenance, Hebbian weighting, and the dual tour.
 
 ### 20.4 Gateway Lucy Security
 

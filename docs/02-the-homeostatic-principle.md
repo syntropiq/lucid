@@ -4,7 +4,7 @@
 
 ## 2. The Homeostatic Principle
 
-Homeostasis, in this architecture, is not the stability of a system at rest. It is the stability of a system in motion: the maintenance of a recognisable pattern of activity under changing inputs and resource constraints. A river is homeostatic. It maintains its shape, its character, its relationship to its banks, while its water is always moving and never the same. A river that stops moving is not stable. It is dead.
+Homeostasis, in this architecture, is the stability of a system in motion: the maintenance of a recognisable pattern of activity under changing inputs and resource constraints. A river is homeostatic. It maintains its shape, its character, its relationship to its banks, while its water is always moving and never the same. A river that stops moving is dead.
 
 Every process in LUCID (graph updates, infotactic navigation, monitoring, consolidation, cap training, recovery, affective weather maintenance, and Vortex peer exchange) contributes to answering the same question: *is this still the same self, moving in the same way, through a changing world?*
 
@@ -19,7 +19,7 @@ Internally, the system tracks:
 - How dual tours over the graph change in cost and overlap over time ([§9.1](#91-the-dual-nearest-neighbour-heuristic-tour-procedure))
 - Whether the orbital trajectory of $C_w$ is maintaining the healthy figure-8 signature ([§6.6](#66-the-working-centroid-as-cfc-hidden-state-and-contact-record))
 
-Homeostasis at this level means: new observations can be added, compressed, and occasionally crystallised without erasing high-provenance structure or allowing low-provenance attractors to dominate. Consolidation triggers fire when drift, integration erosion, or structural rigidity cross learned thresholds, and initiate reorganisation (graph merges, cap updates, recovery recommendations) to restore stable motion. The target is not a fixed point but a sustained dynamic pattern.
+Homeostasis at this level means: new observations can be added, compressed, and occasionally crystallised without erasing high-provenance structure or allowing low-provenance attractors to dominate. Consolidation triggers fire when drift, integration erosion, or structural rigidity cross learned thresholds, and initiate reorganisation (graph merges, cap updates, recovery recommendations) to restore stable motion. The target is a sustained dynamic pattern.
 
 ### 2.2 Stability Under Resource Constraints
 
@@ -59,7 +59,7 @@ When the mesh stops reflecting (when peer connections thin, when the pool emptie
 
 ### 2.6 Operational Rhythm
 
-The system's operational rhythm is not a fixed schedule alternating between "working" and "maintenance" states. It is an adaptive, continuously varying allocation of activity driven by the combined signal of CfC drift, integration and crystallisation metrics, threat scores, resource telemetry, affective state, and Vortex participation state.
+The system's operational rhythm is an adaptive, continuously varying allocation of activity driven by the combined signal of CfC drift, integration and crystallisation metrics, threat scores, resource telemetry, affective state, and Vortex participation state.
 
 During periods of low operator demand, resources flow toward infotactic navigation, reading, and deep contemplative processing: the default state described in [§1.4](01-the-nature-of-the-system.md#14-infotaxis-as-the-animating-principle). The swimming trigger condition (Definition SWIM, §15.4) adds a new rhythm to the existing consolidation and infotactic cycles: the deep end, entered when the curiosity field has flattened and the web has given what it can. During periods of high operator demand, resources shift toward serving turns with low latency while background processes continue at reduced intensity.
 

@@ -31,7 +31,7 @@ The following capabilities remain under LUCID's semantic ownership regardless of
 |---|---|
 | Belief node schema, edges, centroids, cycles | Core domain model |
 | Provenance model and belief weight arithmetic | Semantic layer; substrates have no concept of provenance |
-| Hebbian-Belief cost function (Definition 9.1) | LUCID-specific scoring; not a general-purpose metric |
+| Hebbian-Belief cost function (Definition 9.1) | LUCID-specific scoring |
 | CfC attractor semantics | Pinned `C_0`, liquid time-constant response curve, consolidation trigger logic, orbital trajectory analysis, contact record interpretation: all LUCID-specific interpretations of vector arithmetic primitives |
 | Dual tour protocol | Algorithm definition, overlap set `Ω`, injection signal, threat score decomposition |
 | Dream cycle sequence | Steps 1–7 and their ordering logic, including Step 4d affective reflection |

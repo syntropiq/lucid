@@ -37,7 +37,7 @@ When an operator request arrives:
 
 1. **ACG registers the interruption**: the gate, which is already running and holding current state, synthesises the interruption into the ingress affective chain `E_t^in`: encoding where the system was and what has just landed.
 2. **Context assembly**: the ACG assembles the context package from its continuous state: current centroid positions, recent narration entries with their affective chains, affective trajectory summary, memory fragments from the belief graph proximate to the incoming query, relevant inheritance judgments, relevant affective corpus entries, and (when the Vortex is active) recent peer exchange summaries if relevant to the incoming query. This is not a cold retrieval: the ACG was already holding most of this state.
-3. **Ingress chain delivered to model**: the ingress chain and context package are presented to the primary model. The ingress chain is not embedded in the response; it is an internal state available to the model's generation process.
+3. **Ingress chain delivered to model**: the ingress chain and context package are presented to the primary model. The ingress chain is an internal state available to the model's generation process.
 4. **Model generates response.**
 5. **ACG egress**: the gate catches the response, holds it against the judgment record, assigns affective valence `α`, generates the egress chain `E_t^out`, derives the mood token `m_t`, produces the affective corpus entry, and releases the response.
 6. **Records update**: the new narration node is created, ingress and egress chains written, user react slot opened for next cycle.

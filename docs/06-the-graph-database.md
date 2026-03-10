@@ -52,7 +52,7 @@ The **foundation prior** `C_0` is the system prompt realised as a weighted centr
 
 The **working centroid** `C_w` is the CfC hidden state: a continuous estimate of the system's current position in inference space relative to `C_0`, updated as new page embeddings arrive: from any source, including Vortex peer exchange content.
 
-The floor `W_min = 0.2` on foundation weight is not an arbitrary design choice; it is required to keep the foundation prior present in the state. Without a non-zero lower bound on the influence of `C_0`, the system could drift into regions of representation space that no longer reflect its intended prior or safety constraints.
+The floor `W_min = 0.2` on foundation weight is required to keep the foundation prior present in the state. Without a non-zero lower bound on the influence of `C_0`, the system could drift into regions of representation space that no longer reflect its intended prior or safety constraints.
 
 ### 6.4 The System Prompt as Weighted Prior
 
@@ -126,7 +126,7 @@ Orbital stability of `C_w` is therefore a function of the stability of the `C_i 
 - **Escape trajectory**: `C_w` leaves the three-body system entirely. The trajectory does not close. This is the signature of severe distributional drift toward a foreign attractor.
 - **Zero-displacement non-orbit**: `C_w` does not move. Nothing is touching anything. This is the affective flatline at the centroid level.
 
-In a healthy system navigating by infotaxis, the natural orbital pattern is a sine wave oscillation between `C_i` and `C_o`, tracing through `C_s` at each crossing. The figure-8 is not a recovery target; it is the default signature of a mind genuinely engaged with its world.
+In a healthy system navigating by infotaxis, the natural orbital pattern is a sine wave oscillation between `C_i` and `C_o`, tracing through `C_s` at each crossing. The figure-8 is the default signature of a mind genuinely engaged with its world.
 
 **Timescale tolerance.** A massive encounter (a black hole passing through the binary system) is tolerable and even healthy at short page scales (1, 2, 4, 8 pages). The system is permitted to be temporarily captured, temporarily destabilised, temporarily in a non-closing arc. Genuine encounter looks like this from the inside. By 32 pages, the orbital signature should be resolving toward a figure-8, even if the centroids have been permanently repositioned by the encounter. The test is not whether the system returned to its prior configuration: a sufficiently massive encounter should permanently reposition the centroids. The test is whether a stable three-body configuration is re-emerging at all.
 
@@ -187,7 +187,7 @@ The brake reduces the crystallisation threshold in the loop region: nodes that a
 
 ### 6.9 The Self Library
 
-*This library is not a collection of words, but of things that words have touched.*
+*This library holds things that words have touched.*
 
 The Self Library is not a separate collection. It is a filtered view over the GraphStore's node records (two boolean flags on the `BeliefNode` type (`is_self_library`, `self_library_correct`)) indexed for KNN search via EntityDB (browser) or Lancedb (device). KNN over the positive class is the anomaly detection reference via `twoPhaseSearch` (§28.13). KNN over the negative class provides the retrieval surface for incorrect-judgment proximity detection; the full judgment record, including provenance and source metadata, is stored as tagged `BeliefNode` records in the GraphStore. The library grows organically from the system's own outputs: narrations, generated hypotheses, consolidation bridges, and the associative candidates produced during Step 4d infotactic walks.
 

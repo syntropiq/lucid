@@ -21,7 +21,7 @@ A batch is the unit of escalation. When any sampled item in a batch fails verifi
 | `shared_unverified` | 0.5 | Below hypothesis (confirmed); content ingested but not yet sampled |
 | `shared_verified` | 0.85 | Below committed (1.0); at or just below corroborated max (0.95) |
 
-`shared_verified` sits below committed because it has not survived curation by a custodian: it has survived automated verification, which is a weaker guarantee. The placement below the top of the corroborated band reflects that verification is a structural check, not an epistemic endorsement.
+`shared_verified` sits below committed because it has not survived curation by a custodian: it has survived automated verification, which is a weaker guarantee. The placement below the top of the corroborated band reflects that verification provides a structural check rather than an epistemic endorsement.
 
 ---
 

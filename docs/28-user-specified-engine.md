@@ -117,7 +117,7 @@ interface SpectralSample {
 }
 ```
 
-The spectral monitor (§11.3) consumes `SpectralSample` without knowing which model produced it. When `streams.length === 1` the inner monitor runs in single-stream mode: no cross-stream correlation diagnostic is possible. This is reflected in the active wrapper's `capabilities.dualStream` flag. It is not an error; it is the honest state of what the current model provides.
+The spectral monitor (§11.3) consumes `SpectralSample` without knowing which model produced it. When `streams.length === 1` the inner monitor runs in single-stream mode: no cross-stream correlation diagnostic is possible. This is reflected in the active wrapper's `capabilities.dualStream` flag. This reflects the honest state of what the current model provides.
 
 ---
 
@@ -151,7 +151,7 @@ interface InferenceInterface {
 }
 ```
 
-`spectralSample()` is not a separate inference pass. The implementation runs the model once; the sample is extracted from the same forward pass that produced the generated text. For ONNX-based wrappers this means the named output mechanism captures activations during `generate()` and `spectralSample()` returns the cached result.
+`spectralSample()` reuses the same forward pass as `generate()`: the implementation runs the model once and extracts the sample from that pass. For ONNX-based wrappers this means the named output mechanism captures activations during `generate()` and `spectralSample()` returns the cached result.
 
 **Default inference wrapper: `LFM-2.5-1.2B-Instruct`**
 
@@ -505,7 +505,7 @@ Boot sequence for Device Lucy differs only in the substrate constructors: the re
 
 ### 28.13 MRL + HNSW Two-Phase Search
 
-nomic-embed-text-v1.5 is Matryoshka Representation Learning (MRL) trained. Its first N dimensions are a complete, self-consistent embedding at lower resolution: not a truncated accident but a deliberately trained coarse-to-fine hierarchy. HNSW is inherently coarse-to-fine (sparse upper layers → dense base layer). The match is exact. This section documents how LUCID exploits it.
+nomic-embed-text-v1.5 is Matryoshka Representation Learning (MRL) trained. Its first N dimensions are a complete, self-consistent embedding at lower resolution: a deliberately trained coarse-to-fine hierarchy. HNSW is inherently coarse-to-fine (sparse upper layers → dense base layer). The match is exact. This section documents how LUCID exploits it.
 
 #### The two-phase pattern
 

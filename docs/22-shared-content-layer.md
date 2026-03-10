@@ -39,7 +39,7 @@ Affective corpus entries, ingress/egress chains, mood tokens, and spectral healt
 
 ### 22.3 Trust Model
 
-There is no per-source trust accumulation. All external sources (including Vortex peers submitting content) receive the same fixed-rate random sampling for verification (§23). Past behaviour does not earn elevated trust. A source that has submitted ten clean batches is treated identically to a new source on its eleventh batch. This is an explicit architectural invariant, not a limitation to be relaxed in future versions.
+There is no per-source trust accumulation. All external sources (including Vortex peers submitting content) receive the same fixed-rate random sampling for verification (§23). Past behaviour does not earn elevated trust. A source that has submitted ten clean batches is treated identically to a new source on its eleventh batch. This is an explicit architectural invariant.
 
 ---
 

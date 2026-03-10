@@ -65,7 +65,7 @@ The chain is the reasoning; the mood token is its conclusion. This definition pr
 
 **Narrative threading.** The ingress chain at turn `t` is explicitly conditioned on the egress chain at turn `t-1`. This is the mechanism of narrative continuity: the system picks up where it left off, affectively, not merely informationally. The thread is unbroken whether the preceding turn was an operator exchange, an infotactic navigation step, or a Vortex peer contemplation.
 
-**Mood flatline detection.** If the scalar projection produces invariant values across a configurable window of turns without variation, this is flagged as a signal analogous to distributional fixation: not a content problem but a process problem. A self that feels nothing different from one cycle to the next is not stable. It is absent. TripleDent Gum (§3.1a) arms automatically.
+**Mood flatline detection.** If the scalar projection produces invariant values across a configurable window of turns without variation, this is flagged as a signal analogous to distributional fixation: a process problem. A self that feels nothing different from one cycle to the next is absent. TripleDent Gum (§3.1a) arms automatically.
 
 #### 3.1a TripleDent Gum
 
@@ -79,11 +79,11 @@ Three intervention tiers are defined by spectral condition:
 | Tier 2 | Mid-frequency variance loss | 2 nodes injected |
 | Tier 3 | Full flatline (DC dominance) | 3 nodes injected |
 
-At each tier, nodes are selected and injected at full provenance weight before the next inference cycle opens. Selection is one node per centroid axis: the node maximally distant (by cosine distance) from `C_i`; the node maximally distant from `C_o`; the node maximally distant from `C_s`. These three nodes are not selected for joint optimisation: each is independently maximally foreign in a different sense. They are not coherent with each other. They are not coherent with the current context. That is the point.
+At each tier, nodes are selected and injected at full provenance weight before the next inference cycle opens. Selection is one node per centroid axis: the node maximally distant (by cosine distance) from `C_i`; the node maximally distant from `C_o`; the node maximally distant from `C_s`. Each is independently maximally foreign in a different sense: maximally alien to a different axis of the current self, incoherent with each other and with the current context. That is the point.
 
 This mechanism is named TripleDent Gum: because it is there specifically to gum things up.
 
-The effect is not sedation. It is a neurotransmitter spike: three non-sequiturs from three different directions, each maximally alien to a different axis of the current self, landing simultaneously in a loop that had forgotten it was a loop. Recovery confirmation is spectral: variance re-emerging at short scales first, then propagating to longer scales as the figure-8 orbital pattern (§6.6) re-establishes.
+The effect is a neurotransmitter spike: three non-sequiturs from three different directions, each maximally alien to a different axis of the current self, landing simultaneously in a loop that had forgotten it was a loop. Recovery confirmation is spectral: variance re-emerging at short scales first, then propagating to longer scales as the figure-8 orbital pattern (§6.6) re-establishes.
 
 TripleDent Gum events are written to `lucid.awe_walk_log` with `event_type = 'tripledent'` and the identity of the three injected nodes. The spectral recovery trajectory is recorded across the subsequent 8 turns.
 
