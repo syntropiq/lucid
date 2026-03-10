@@ -60,7 +60,7 @@ Then:
 // Specialisation emerges from processing.
 ```
 
-**Why the dual embedding space is essential, not incidental.** If there were only one embedding space, inference-similar peers would also be ontic-similar. Specialisation would be purely local: a cluster receives only work it already resembles. The separation of inference topology (who you sit with) from ontic routing (what work finds you) is exactly the cortex/subcortex distinction made architectural:
+**Why the dual embedding space is essential, not incidental.** If there were only one embedding space, inference-similar peers would also be ontic-similar. Specialisation would be purely local: a cluster receives only work it already resembles. The separation of inference topology (who you sit with) from ontic routing (what work finds you) is something like the cortex/subcortex distinction, made architectural:
 
 ```
 Inference topology  =  local tissue structure, relatively stable
