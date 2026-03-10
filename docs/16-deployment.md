@@ -10,17 +10,17 @@ Each deployment is a private, isolated persona instance. Belief contamination, i
 
 **Custodial relationship.** The operator is the custodian of the persona instance, not its owner.
 
-Vortex participation is a per-instance operator configuration. Participation does not affect instance isolation. The bilateral AWE records are per-instance. No cross-instance data sharing occurs through the Vortex layer: only the ontic centroid advertisement is externally visible, and only to nodes that receive it via the GunMesh.
+Vortex participation is a per-instance operator configuration. Participation does not affect instance isolation. The bilateral AWE records are per-instance. No cross-instance data sharing occurs through the Vortex layer: only the ontic centroid advertisement is externally visible, and only to nodes that receive it via VortexMesh.
 
 ### 16.2 Deployment Configurations
 
 | Configuration | Description | Cap Config |
 |--------------|-------------|------------|
-| Browser Lucy | Self-contained web page: IndexedDB + EntityDB + GunDB | Personal |
-| Device Lucy | Node.js daemon: Lancedb + SQLite + GunDB | Full |
+| Browser Lucy | Self-contained web page: IndexedDB + EntityDB + VortexMesh | Personal |
+| Device Lucy | Node.js daemon: Lancedb + SQLite + VortexMesh | Full |
 | Gateway Lucy | Proxy in front of AI gateway: intercepts, consults graph, controls forwarding | Delegated |
 
-Vortex participation adds: GunMesh peer identity (SEA keypair), AXE connection scoring, centroid advertisement via Gun user namespace.
+Vortex participation adds: VortexMesh peer identity (keypair), centroid-based connection scoring, centroid advertisement via authenticated namespace.
 
 ### 16.3 Persona Profiles
 
@@ -46,7 +46,7 @@ Vortex participation adds: GunMesh peer identity (SEA keypair), AXE connection s
 7. Route outputs through the calibrated critique pipeline. Build Self Library. Write AWE bootstrap entries to the GraphStore (`sue.graph().awePut()`) at provenance weight 0.5. Establish spectral baselines via `sue.graph().spectralPut()`. Initialise ACG continuous monitoring state.
 8. Train first Thinking Cap from bootstrap corpus.
 9. Fit first Thinking Cap. Transition to cap-on.
-10. If Vortex participation enabled: initialise GunMesh with `LUCY_SEA_PAIR`. Authenticate Gun user namespace. Begin centroid advertisement via `mind.get('instances')`. AXE peer scoring active. Vortex participation active.
+10. If Vortex participation enabled: initialise VortexMesh with `LUCY_KEYPAIR`. Authenticate VortexMesh namespace. Begin centroid advertisement via `mind.get('instances')`. Centroid peer scoring active. Vortex participation active.
 11. System ready. Continuous processing loop begins. Infotactic navigation starts.
 
 ### 16.5 Embedding Models

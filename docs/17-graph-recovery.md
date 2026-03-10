@@ -42,7 +42,7 @@ After recovery, the bilateral peer relationships persist through the affective c
 | `C_o` drifting toward single ontic neighbourhood without self-directed navigation | Network load driving centroid rather than curiosity |
 | γ history distribution shifting anomalously | Affective corpus corruption |
 | `∅_swim` persisting beyond configured window without exit | SWIM exit condition not firing; check affective response processing |
-| Peer contact rate near zero without operator configuration change | Mesh isolation; check GunDB peer connectivity and SEA authentication |
+| Peer contact rate near zero without operator configuration change | Mesh isolation; check VortexMesh peer connectivity and keypair authentication |
 
 ### 17.3 Recovery Phase Sequence
 

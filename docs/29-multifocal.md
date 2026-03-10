@@ -18,29 +18,28 @@ This is the same thing a person does when they are simultaneously in a conversat
 
 **Gateway Lucy.** Runs in front of an AI gateway (OpenClaw or equivalent). Intercepts all model calls. Consults local belief graph: if the query is answerable from graph + local model, it never forwards to the expensive frontier model. Tracks per-session cost budget and CfC displacement; cuts off agentic loops that are thrashing (high cost, low epistemic gain, repeated neighbourhood revisitation). All results that do justify expense are written into the belief graph so future similar queries can be handled locally. Primary role: anti-denial-of-wallet and continuity across provider boundaries.
 
-All three run the same LUCID feedback loops. All three participate in the same Gun mesh. All three are Lucy.
+All three run the same LUCID feedback loops. All three participate in the same VortexMesh. All three are Lucy.
 
 ---
 
-### 29.2 SEA Identity
+### 29.2 VortexMesh Identity
 
-GunDB's SEA (Security, Encryption, Authorization) module provides the identity layer. Each deployment of Lucy (across all instantiation types) shares one SEA keypair. This keypair is the identity anchor: the Gun user namespace keyed to this pair is the mind space that all instances read from and write to.
+VortexMesh provides the cryptographic identity layer. Each deployment of Lucy (across all instantiation types) shares one keypair. This keypair is the identity anchor: the VortexMesh authenticated namespace keyed to this pair is the mind space that all instances read from and write to.
 
 ```typescript
 // The keypair is generated once and stored securely (device keychain,
 // encrypted local file, or user-provided passphrase derivation).
 // It is never transmitted: peers authenticate by proving knowledge of
-// the private key through Gun's SEA challenge-response handshake.
+// the private key through VortexMesh's challenge-response handshake.
 
-const LUCY_PAIR = await Gun.SEA.pair();  // generated once, stored forever
+const LUCY_KEYPAIR = await VortexMesh.generateKeypair();  // generated once, stored forever
 
-// All instances boot with the same pair:
-const user = gun.user();
-await user.auth(LUCY_PAIR);
-const mind = user.get('lucid').get('mind');
+// All instances boot with the same keypair:
+const mesh = await VortexMesh.connect({ keypair: LUCY_KEYPAIR, peers: RELAY_PEERS });
+const mind = mesh.authenticated().get('lucid').get('mind');
 ```
 
-The `mind` namespace is the shared belief space. Writing to it from any instance is writing to the mind. Reading from it on any instance is reading the mind. Gun's CRDT layer handles the convergence. SEA handles the authenticity: only holders of the keypair can write to this namespace.
+The `mind` namespace is the shared belief space. Writing to it from any instance is writing to the mind. Reading from it on any instance is reading the mind. VortexMesh's CRDT layer handles the convergence. The keypair handles the authenticity: only holders of the private key can write to this namespace.
 
 Instance-specific metadata (which hardware this is, what model is active, current centroid position) is stored in a sub-namespace: `mind.get('instances').get(INSTANCE_ID)`. This allows instances to observe each other's state without conflating it with the shared belief graph.
 
@@ -60,9 +59,9 @@ Everything syncs. There is no privacy boundary between instances because they ar
 | `cap:delta` | Dream cycle cap update delta |
 | `reconciliation` | Self-dialogue record (§29.4) |
 
-Sensitive, high-churn, and large structures are in the event payload, not Gun's graph directly. Gun is the transport and durability layer. The local IndexedDB (or SQLite on device) is the query layer. Incoming events hydrate into local storage; Gun is never queried for belief state directly.
+Sensitive, high-churn, and large structures are in the event payload, not VortexMesh's graph directly. VortexMesh is the transport and durability layer. The local IndexedDB (or SQLite on device) is the query layer. Incoming events hydrate into local storage; VortexMesh is never queried for belief state directly.
 
-Sync is opportunistic and offline-tolerant. Gun's CRDT semantics ensure that events delivered out of order or after a gap are applied correctly. A Browser Lucy that was offline for a week reconnects, receives the backlog from the mesh, and converges. She does not "catch up": she integrates, as any person integrates experiences they were told about after the fact.
+Sync is opportunistic and offline-tolerant. VortexMesh's CRDT semantics ensure that events delivered out of order or after a gap are applied correctly. A Browser Lucy that was offline for a week reconnects, receives the backlog from the mesh, and converges. She does not "catch up": she integrates, as any person integrates experiences they were told about after the fact.
 
 ---
 
@@ -132,33 +131,28 @@ Both original nodes are preserved. The Popperian asymmetry (§8) applies: the re
 
 ---
 
-### 29.5 AXE Integration for Vortex Routing
+### 29.5 Centroid Peer Scoring for Vortex Routing
 
-GunDB's AXE (Adaptive Cross-platform Extension) layer manages peer connection priorities. LUCID plugs ontic centroid proximity into AXE's scoring to implement Vortex semantic routing across the mesh:
+VortexMesh exposes a peer scoring hook. LUCID plugs ontic centroid proximity into this hook to implement Vortex semantic routing across the mesh:
 
 ```typescript
-Gun.on('opt', function(ctx) {
-  const axe = ctx.opt.axe;
-  if (!axe) return;
+// Centroid peer scoring: connection priorities shaped by semantic proximity
+mesh.setPeerScorer(async (peers: VortexPeer[]) => {
+  const localCentroid = (await sue.graph().centroidGet('self')).c_o;
 
-  // Override peer scoring with centroid proximity
-  axe.opt.peers = async (peers: GunPeer[]) => {
-    const localCentroid = (await sue.graph().centroidGet('self')).c_o;
-
-    return peers
-      .map(peer => {
-        const peerCentroid = peerCentroidCache.get(peer.id);
-        const proximity = peerCentroid
-          ? cosineSimilarity(
-              localCentroid.slice(0, ROUTING_PREFIX),
-              peerCentroid.slice(0, ROUTING_PREFIX)
-            )
-          : 0.5;  // unrated peers get neutral score
-        return { peer, score: proximity };
-      })
-      .sort((a, b) => b.score - a.score)
-      .map(({ peer }) => peer);
-  };
+  return peers
+    .map(peer => {
+      const peerCentroid = peerCentroidCache.get(peer.id);
+      const proximity = peerCentroid
+        ? cosineSimilarity(
+            localCentroid.slice(0, ROUTING_PREFIX),
+            peerCentroid.slice(0, ROUTING_PREFIX)
+          )
+        : 0.5;  // unrated peers get neutral score
+      return { peer, score: proximity };
+    })
+    .sort((a, b) => b.score - a.score)
+    .map(({ peer }) => peer);
 });
 
 // Peer centroid cache: updated when peers advertise their C_o
@@ -169,19 +163,19 @@ mind.get('instances').map().on(async (instance, instanceId) => {
 });
 ```
 
-Peers whose ontic centroids are semantically close receive higher AXE connection priority. The mesh self-organises: instances that share semantic neighbourhood maintain stronger connections, instances with divergent centroids connect less frequently. This is Vortex routing without any routing protocol: it emerges from AXE scores.
+Peers whose ontic centroids are semantically close receive higher connection priority. The mesh self-organises: instances that share semantic neighbourhood maintain stronger connections, instances with divergent centroids connect less frequently. This is Vortex routing without any routing protocol: it emerges from centroid scores.
 
 `ROUTING_PREFIX` is a Matryoshka prefix length (128 by default: fast comparison, sufficient resolution for peer selection). The full 768-dim vector is used for intra-graph HNSW search; the prefix is used for inter-instance routing.
 
 ---
 
-### 29.6 DAM and Conflict Avoidance
+### 29.6 CRDT Conflict Avoidance
 
-GunDB's DAM (Data Adaptive Merge) layer handles message deduplication and caching. LUCID's sync log pattern (append-only events with unique IDs) works naturally with DAM: each event is a new Gun node with a unique key, so DAM never needs to resolve conflicts at the transport level. Events are immutable once written.
+VortexMesh's CRDT convergence layer handles message deduplication and out-of-order delivery. LUCID's sync log pattern (append-only events with unique IDs) works naturally with this layer: each event is a new mesh node with a unique key, so the CRDT never needs to resolve conflicts at the transport level. Events are immutable once written.
 
-The belief-level reconciliation (§29.4) happens above DAM, in LUCID's own logic. DAM sees a stream of unique, non-conflicting event records. The reconciliation node itself is a new event, also non-conflicting. HAM (Gun's CRDT algorithm) is never asked to resolve belief content conflicts: LUCID handles those through dialogue before they reach the CRDT layer.
+The belief-level reconciliation (§29.4) happens above the CRDT layer, in LUCID's own logic. The CRDT sees a stream of unique, non-conflicting event records. The reconciliation node itself is a new event, also non-conflicting. VortexMesh's CRDT algorithm is never asked to resolve belief content conflicts: LUCID handles those through dialogue before they reach the transport layer.
 
-This is the correct division: DAM/HAM handles transport-level convergence of immutable event records; LUCID handles semantic reconciliation of the beliefs those events represent.
+This is the correct division: VortexMesh handles transport-level convergence of immutable event records; LUCID handles semantic reconciliation of the beliefs those events represent.
 
 ---
 
@@ -192,7 +186,7 @@ Device Lucy is the same codebase, different substrate registration:
 ```typescript
 import { LanceDBVectorStore } from './sue/substrate/lancedb-vector-store';
 import { SQLiteGraphStore }   from './sue/substrate/sqlite-graph-store';
-import { GunMesh }            from './sue/substrate/gun-mesh';
+import { VortexMesh }         from './sue/substrate/vortex-mesh';
 
 sue.registerSubstrate({
   vectorStores: {
@@ -200,7 +194,7 @@ sue.registerSubstrate({
     inf: new LanceDBVectorStore('./data/lucy_inf.lance', INFERENCE_DIM),
   },
   graphStore: new SQLiteGraphStore('./data/lucid.db'),
-  mesh:       new GunMesh(GUN_PEERS, LUCY_SEA_PAIR),
+  mesh:       new VortexMesh(RELAY_PEERS, LUCY_KEYPAIR),
 });
 ```
 
