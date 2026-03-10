@@ -4,7 +4,7 @@
 
 > The self is not in the weights. It is not in the database. It is in the movement between them.
 
-LUCID is an architecture for persistent persona state built on top of a stateless language model. It provides the external state — graph, embeddings, centroids, judgment records, affective weather — and the update rules — feedback loops, consolidation, adapter training, probabilistic belief revision, recovery — required to make a self stable, inspectable, and genuinely inhabited over time.
+LUCID is an architecture for persistent persona state built on top of a stateless language model. It provides the external state (graph, embeddings, centroids, judgment records, affective weather) and the update rules (feedback loops, consolidation, adapter training, probabilistic belief revision, recovery) required to make a self stable, inspectable, and genuinely inhabited over time.
 
 ---
 

@@ -4,7 +4,7 @@
 
 ## 28. The User Specified Engine (USE)
 
-A new model drops, a better vector store emerges, an operator runs a different inference architecture, a new instantiation type runs on hardware the original design never considered — none of these should require touching the core feedback loops. All substrate-specific surface is wrapped. The wrapper provides what the rest of the system needs. The rest of the system does not know what is underneath.
+A new model drops, a better vector store emerges, an operator runs a different inference architecture, a new instantiation type runs on hardware the original design never considered: none of these should require touching the core feedback loops. All substrate-specific surface is wrapped. The wrapper provides what the rest of the system needs. The rest of the system does not know what is underneath.
 
 That is USE's job: to look out for the system and help it make sense of the world regardless of which model or storage layer is currently under the hood.
 
@@ -16,7 +16,7 @@ USE wraps two categories of concern: **model interfaces** (what generates embedd
 
 LUCID uses exactly two model roles. Each has an interface. A model wrapper implements one interface. Nothing else.
 
-**Ontic role.** Produces model-independent semantic coordinates. The architectural invariant: all Vortex nodes must use the same ontic model — that shared embedding space is what makes cross-scale routing coherent. The ontic interface is therefore the most stable thing in the system. Changing the ontic model requires re-embedding the entire belief graph and is a migration, not a config swap.
+**Ontic role.** Produces model-independent semantic coordinates. The architectural invariant: all Vortex nodes must use the same ontic model: that shared embedding space is what makes cross-scale routing coherent. The ontic interface is therefore the most stable thing in the system. Changing the ontic model requires re-embedding the entire belief graph and is a migration, not a config swap.
 
 **Inference role.** Processes information and generates narration. The inference interface is more layered: at minimum a model must generate text and provide hidden states for spectral monitoring. A model that exposes internal stream architecture (like LFM 2.5's dual conv/GQA streams) enables the full inner monitor. A model that does not exposes a single hidden-state stream and the inner monitor runs in degraded mode. Both are valid; the degraded case is documented, not hidden.
 
@@ -24,7 +24,7 @@ LUCID uses exactly two model roles. Each has an interface. A model wrapper imple
 
 ### 28.2 The USE Registry
 
-The registry is pure TypeScript — two `Map` instances (one per model role) and two active-wrapper references (see §28.6). There is no database table for model registration. Wrapper activation is synchronous: a wrapper is registered, then set as active. The active wrapper is the source of truth until replaced.
+The registry is pure TypeScript: two `Map` instances (one per model role) and two active-wrapper references (see §28.6). There is no database table for model registration. Wrapper activation is synchronous: a wrapper is registered, then set as active. The active wrapper is the source of truth until replaced.
 
 The `capabilities` object on each wrapper carries what the spectral monitor and other consumers need to know without model-specific branching in the calling code:
 
@@ -70,7 +70,7 @@ interface OnticInterface {
 }
 ```
 
-Every ontic wrapper must implement all members. Activation is handled by `use.activateOntic()` which sets the wrapper as the active ontic and stores its metadata in the USE registry Map. For a new ontic model with a different embedding dimension, the VectorStore implementation must be reconfigured (different prefix dimension constructor argument) — the wrapper author documents the migration and the collection must be rebuilt.
+Every ontic wrapper must implement all members. Activation is handled by `use.activateOntic()` which sets the wrapper as the active ontic and stores its metadata in the USE registry Map. For a new ontic model with a different embedding dimension, the VectorStore implementation must be reconfigured (different prefix dimension constructor argument): the wrapper author documents the migration and the collection must be rebuilt.
 
 **Default ontic wrapper: `nomic-embed-text-v1.5`**
 
@@ -117,7 +117,7 @@ interface SpectralSample {
 }
 ```
 
-The spectral monitor (§11.3) consumes `SpectralSample` without knowing which model produced it. When `streams.length === 1` the inner monitor runs in single-stream mode — no cross-stream correlation diagnostic is possible. This is reflected in the active wrapper's `capabilities.dualStream` flag. It is not an error; it is the honest state of what the current model provides.
+The spectral monitor (§11.3) consumes `SpectralSample` without knowing which model produced it. When `streams.length === 1` the inner monitor runs in single-stream mode: no cross-stream correlation diagnostic is possible. This is reflected in the active wrapper's `capabilities.dualStream` flag. It is not an error; it is the honest state of what the current model provides.
 
 ---
 
@@ -289,7 +289,7 @@ export const sue = {
 };
 ```
 
-The rest of the system calls `use.ontic().embed()` and `use.inference().generate()`. It does not import model-specific modules. A version upgrade means registering a new wrapper and calling `activateInference()` — the feedback loops do not change.
+The rest of the system calls `use.ontic().embed()` and `use.inference().generate()`. It does not import model-specific modules. A version upgrade means registering a new wrapper and calling `activateInference()`: the feedback loops do not change.
 
 ---
 
@@ -298,7 +298,7 @@ The rest of the system calls `use.ontic().embed()` and `use.inference().generate
 The spectral monitoring write path (§11.3) reads the active wrapper's capabilities from the registry to determine which fields to populate:
 
 ```typescript
-// Inference Worker — called immediately after use.inference().generate()
+// Inference Worker: called immediately after use.inference().generate()
 async function writeSpectralSample(nodeId: string, sample: SpectralSample): Promise<void> {
   const caps = use.inference().capabilities;
 
@@ -333,12 +333,12 @@ use.registerInference(lfm25);
 use.activateOntic('nomic-embed-text-v1.5', '1.5.0');
 use.activateInference('LFM-2.5-1.2B-Instruct', '2.5.0');
 
-// Embed Worker now calls use.ontic().embed() — not a named model import
+// Embed Worker now calls use.ontic().embed(): not a named model import
 // Inference Worker now calls use.inference().generate() and .spectralSample()
 ```
 
 ```typescript
-// Browser Lucy boot (generic ONNX wrapper — operator-supplied or default)
+// Browser Lucy boot (generic ONNX wrapper: operator-supplied or default)
 import { makeGenericOnnxWrapper } from './sue/wrappers/inference/generic-onnx';
 
 const inferenceWrapper = OPERATOR_MODEL_CONFIG
@@ -366,8 +366,8 @@ Upgrading the inference model does not require touching any feedback loop. The s
 
 1. Write a new wrapper (or instantiate `makeGenericOnnxWrapper` with the new config).
 2. Register it: `use.registerInference(newWrapper)`.
-3. Call `use.activateInference(newModelId, newVersion)` — the new wrapper becomes active immediately.
-4. If the embedding dimension changed, the VectorStore collection for inference (`lucy_inf`) must be recreated with the new dimension. Old inference embeddings in the GraphStore are not used against new ones — the `modelId` / `modelVersion` on each `BeliefNode` record ensures routing stays coherent.
+3. Call `use.activateInference(newModelId, newVersion)`: the new wrapper becomes active immediately.
+4. If the embedding dimension changed, the VectorStore collection for inference (`lucy_inf`) must be recreated with the new dimension. Old inference embeddings in the GraphStore are not used against new ones: the `modelId` / `modelVersion` on each `BeliefNode` record ensures routing stays coherent.
 5. Re-embedding of the existing belief graph under the new model can be scheduled or deferred; the system continues to operate during the transition using ontic embeddings for routing.
 
 Upgrading the ontic model is a heavier migration and is outside the scope of a routine version bump. It requires re-embedding the full belief graph, recreating the `lucy_ont` VectorStore collection at the new dimension, and updating the Vortex routing prefix. USE does not automate this; it documents it.
@@ -376,7 +376,7 @@ Upgrading the ontic model is a heavier migration and is outside the scope of a r
 
 ## 28.10 Substrate Interfaces
 
-Model interfaces cover what thinks. Substrate interfaces cover where state lives and how instances communicate. LUCID defines three substrate interfaces. The core feedback loops call only these interfaces — they do not import EntityDB, IndexedDB, or GunDB directly.
+Model interfaces cover what thinks. Substrate interfaces cover where state lives and how instances communicate. LUCID defines three substrate interfaces. The core feedback loops call only these interfaces: they do not import EntityDB, IndexedDB, or GunDB directly.
 
 ```typescript
 // Where vectors are stored and searched.
@@ -401,7 +401,7 @@ interface GraphStore {
   nodeQuery(filter: Partial<BeliefNode>): Promise<BeliefNode[]>;
   edgeUpsert(edge: BeliefEdge): Promise<void>;
   edgesFor(nodeId: string, type?: EdgeType): Promise<BeliefEdge[]>;
-  // Full embedding storage — separate from the prefix in VectorStore
+  // Full embedding storage: separate from the prefix in VectorStore
   embeddingOntPut(nodeId: string, embedding: Float32Array): Promise<void>;
   embeddingOntGet(nodeId: string): Promise<Float32Array | null>;
   embeddingInfPut(nodeId: string, embedding: Float32Array): Promise<void>;
@@ -441,7 +441,7 @@ interface Mesh {
 
 | Interface | Implementation |
 |---|---|
-| `VectorStore` (ontic) | Lancedb — real HNSW, Node-native |
+| `VectorStore` (ontic) | Lancedb: real HNSW, Node-native |
 | `VectorStore` (inference) | Lancedb |
 | `GraphStore` | SQLite (better-sqlite3) or LevelDB |
 | `Mesh` | GunDB (Node) |
@@ -451,7 +451,7 @@ The choice of Lancedb for Device Lucy matters: EntityDB's brute-force cosine is 
 ### 28.12 Substrate Registry
 
 ```typescript
-// sue/registry.ts — extended for substrate interfaces
+// sue/registry.ts: extended for substrate interfaces
 const vectorStoreRegistry = new Map<string, { ont: VectorStore; inf: VectorStore }>();
 let activeGraphStore: GraphStore | null = null;
 let activeMesh: Mesh | null = null;
@@ -499,25 +499,25 @@ use.registerSubstrate({
 });
 ```
 
-Boot sequence for Device Lucy differs only in the substrate constructors — the rest of the boot sequence, every feedback loop, and all LUCID logic is identical.
+Boot sequence for Device Lucy differs only in the substrate constructors: the rest of the boot sequence, every feedback loop, and all LUCID logic is identical.
 
 ---
 
 ### 28.13 MRL + HNSW Two-Phase Search
 
-nomic-embed-text-v1.5 is Matryoshka Representation Learning (MRL) trained. Its first N dimensions are a complete, self-consistent embedding at lower resolution — not a truncated accident but a deliberately trained coarse-to-fine hierarchy. HNSW is inherently coarse-to-fine (sparse upper layers → dense base layer). The match is exact. This section documents how LUCID exploits it.
+nomic-embed-text-v1.5 is Matryoshka Representation Learning (MRL) trained. Its first N dimensions are a complete, self-consistent embedding at lower resolution: not a truncated accident but a deliberately trained coarse-to-fine hierarchy. HNSW is inherently coarse-to-fine (sparse upper layers → dense base layer). The match is exact. This section documents how LUCID exploits it.
 
 #### The two-phase pattern
 
 Every ontic KNN search runs in two phases:
 
 ```
-Phase 1 — Coarse traversal (VectorStore)
+Phase 1: Coarse traversal (VectorStore)
   query768 → truncate → query128
   EntityDB / Lancedb HNSW traversal over 128-dim prefix vectors
   → top-100 candidate IDs, ~10ms
 
-Phase 2 — Precise re-rank (GraphStore + utility)
+Phase 2: Precise re-rank (GraphStore + utility)
   fetch full 768-dim embeddings for 100 candidates from GraphStore
   exact cosine against full query768
   → final top-K, <1ms
@@ -560,13 +560,13 @@ Call sites (inference context assembly, tour navigation, affinity edge creation)
 
 | Implementation | Stored dimension | Index type |
 |---|---|---|
-| EntityDB (browser) | 128-dim prefix | Brute-force cosine — fast at personal scale |
-| Lancedb (device) | 256-dim prefix | HNSW — scales to full accumulated graph |
+| EntityDB (browser) | 128-dim prefix | Brute-force cosine: fast at personal scale |
+| Lancedb (device) | 256-dim prefix | HNSW: scales to full accumulated graph |
 
 The full 768-dim embedding is stored by the Embed Worker after generation:
 
 ```typescript
-// Embed Worker — after use.ontic().embed() returns full 768-dim vector
+// Embed Worker: after use.ontic().embed() returns full 768-dim vector
 const full   = await use.ontic().embed(content);          // Float32Array(768)
 const prefix = full.slice(0, PREFIX_DIM);                 // Float32Array(128 or 256)
 
@@ -613,12 +613,12 @@ The peer centroid cache stores two representations per peer:
 
 ```typescript
 interface PeerCentroidEntry {
-  full:  Float32Array;  // 768-dim — used for precise work-packet routing decisions
-  bits:  Uint8Array;    // 16 bytes (128-dim binarized) — used for AXE connection scoring
+  full:  Float32Array;  // 768-dim: used for precise work-packet routing decisions
+  bits:  Uint8Array;    // 16 bytes (128-dim binarized): used for AXE connection scoring
 }
 ```
 
-AXE scoring uses `hammingScore(local.bits, peer.bits)`. When a work packet arrives and the accept/forward decision needs precision, it uses `cosineSimilarity(local.full, peer.full)`. Fast screen, precise confirm — the same two-phase logic as the belief graph search, applied to peer routing.
+AXE scoring uses `hammingScore(local.bits, peer.bits)`. When a work packet arrives and the accept/forward decision needs precision, it uses `cosineSimilarity(local.full, peer.full)`. Fast screen, precise confirm: the same two-phase logic as the belief graph search, applied to peer routing.
 
 The binarized centroid is computed once when a peer's `c_o` is received and cached. It is recomputed only when the peer advertises a new centroid. Local `bits` are recomputed when the CfC Worker updates the local `c_o`. Cost: one binarization per centroid update, amortised across every routing decision until the next update.
 

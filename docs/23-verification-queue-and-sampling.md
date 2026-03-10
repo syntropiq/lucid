@@ -8,7 +8,7 @@
 
 A global `shared_sampling_rate` (stored in operator configuration, suggested initial value 0.05) determines the fraction of items sampled per batch. Sampling selection runs at batch submission time. The sampling rate is global and applies to all sources equally.
 
-Vortex peer content bypasses the verification queue entirely — it enters through the peer provenance path and is subject to threat architecture assessment rather than batch sampling. The two paths are independent and do not interfere.
+Vortex peer content bypasses the verification queue entirely: it enters through the peer provenance path and is subject to threat architecture assessment rather than batch sampling. The two paths are independent and do not interfere.
 
 ### 23.2 Batch Escalation
 
@@ -21,7 +21,7 @@ A batch is the unit of escalation. When any sampled item in a batch fails verifi
 | `shared_unverified` | 0.5 | Below hypothesis (confirmed); content ingested but not yet sampled |
 | `shared_verified` | 0.85 | Below committed (1.0); at or just below corroborated max (0.95) |
 
-`shared_verified` sits below committed because it has not survived curation by a custodian — it has survived automated verification, which is a weaker guarantee. The placement below the top of the corroborated band reflects that verification is a structural check, not an epistemic endorsement.
+`shared_verified` sits below committed because it has not survived curation by a custodian: it has survived automated verification, which is a weaker guarantee. The placement below the top of the corroborated band reflects that verification is a structural check, not an epistemic endorsement.
 
 ---
 

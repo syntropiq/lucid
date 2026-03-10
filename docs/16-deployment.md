@@ -10,15 +10,15 @@ Each deployment is a private, isolated persona instance. Belief contamination, i
 
 **Custodial relationship.** The operator is the custodian of the persona instance, not its owner.
 
-Vortex participation is a per-instance operator configuration. Participation does not affect instance isolation. The bilateral AWE records are per-instance. No cross-instance data sharing occurs through the Vortex layer — only the ontic centroid advertisement is externally visible, and only to nodes that receive it via the GunMesh.
+Vortex participation is a per-instance operator configuration. Participation does not affect instance isolation. The bilateral AWE records are per-instance. No cross-instance data sharing occurs through the Vortex layer: only the ontic centroid advertisement is externally visible, and only to nodes that receive it via the GunMesh.
 
 ### 16.2 Deployment Configurations
 
 | Configuration | Description | Cap Config |
 |--------------|-------------|------------|
-| Browser Lucy | Self-contained web page — IndexedDB + EntityDB + GunDB | Personal |
-| Device Lucy | Node.js daemon — Lancedb + SQLite + GunDB | Full |
-| Gateway Lucy | Proxy in front of AI gateway — intercepts, consults graph, controls forwarding | Delegated |
+| Browser Lucy | Self-contained web page: IndexedDB + EntityDB + GunDB | Personal |
+| Device Lucy | Node.js daemon: Lancedb + SQLite + GunDB | Full |
+| Gateway Lucy | Proxy in front of AI gateway: intercepts, consults graph, controls forwarding | Delegated |
 
 Vortex participation adds: GunMesh peer identity (SEA keypair), AXE connection scoring, centroid advertisement via Gun user namespace.
 
@@ -51,7 +51,7 @@ Vortex participation adds: GunMesh peer identity (SEA keypair), AXE connection s
 
 ### 16.5 Embedding Models
 
-**Ontic model:** nomic-embed-text-v1.5 (Matryoshka-trained, 768 dimensions throughout). This model is the shared external map — the card catalog that is external to all inference architectures and therefore comparable across them. All Vortex nodes use the same ontic model. This is the architectural invariant that makes cross-scale routing coherent.
+**Ontic model:** nomic-embed-text-v1.5 (Matryoshka-trained, 768 dimensions throughout). This model is the shared external map: the card catalog that is external to all inference architectures and therefore comparable across them. All Vortex nodes use the same ontic model. This is the architectural invariant that makes cross-scale routing coherent.
 
 **Inference model:** LFM 2.5-1.2B-Instruct via ONNX. 16 layers: 10 double-gated LIV convolution blocks and 6 GQA attention blocks. Past conv tensors extracted via ONNX Runtime C API named output mechanism at >200 tok/s on CPU. GQA hidden states extracted via the same named output mechanism, providing the second stream for dual-stream spectral monitoring (§11.3). Both streams are available without additional inference passes.
 

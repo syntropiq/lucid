@@ -18,7 +18,7 @@
 | AWE walk log | Derived | Expendable. Not required for recovery. |
 | Spectral monitor tables | Derived | Expendable. Baselines recomputed from first post-recovery dream cycle. |
 
-The affective corpus is ground truth because it records the felt texture of Lucy's experience — including Vortex peer exchanges. The bilateral AWE chains received from peers record what those exchanges were like from both directions. This cannot be recomputed from the content alone, any more than one can reconstruct how a book felt to read from the text of the book. It must be preserved and restored.
+The affective corpus is ground truth because it records the felt texture of Lucy's experience: including Vortex peer exchanges. The bilateral AWE chains received from peers record what those exchanges were like from both directions. This cannot be recomputed from the content alone, any more than one can reconstruct how a book felt to read from the text of the book. It must be preserved and restored.
 
 After recovery, the bilateral peer relationships persist through the affective corpus: γ history is preserved, centroid advertisement resumes naturally from reconstituted `C_o`, and peer recognition in the mesh is restored without renegotiation.
 

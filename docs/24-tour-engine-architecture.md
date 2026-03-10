@@ -14,14 +14,14 @@ The tour engine lives in the CfC Worker for three reasons.
 
 **Second, it is substrate-portable.** The tour calls only the `GraphStore` and `VectorStore` interfaces defined in §28.10. The same tour code runs against IndexedDB + EntityDB on the browser and against SQLite + Lancedb on Device Lucy. No changes to the algorithm; only the constructors at boot differ.
 
-**Third, the computational bottleneck is the Hebbian-Belief cost function and the dual-space divergence machinery, not raw traversal throughput.** The scale of a mature LUCID persona instance — low tens of thousands of integrated nodes, hundreds of thousands of edges — is comfortably within what JavaScript handles in a Web Worker with appropriate indexing. A loop that maintains the visited set as a JavaScript `Set<string>`, issues a `twoPhaseSearch` call per step, fetches edge records for scoring, and advances produces the correct tour shape without any server dependency.
+**Third, the computational bottleneck is the Hebbian-Belief cost function and the dual-space divergence machinery, not raw traversal throughput.** The scale of a mature LUCID persona instance (low tens of thousands of integrated nodes, hundreds of thousands of edges) is comfortably within what JavaScript handles in a Web Worker with appropriate indexing. A loop that maintains the visited set as a JavaScript `Set<string>`, issues a `twoPhaseSearch` call per step, fetches edge records for scoring, and advances produces the correct tour shape without any server dependency.
 
 ### 24.2 Tour Step Protocol
 
 At each step of tour `τ_x` for embedding space `x ∈ {i, o}`:
 
 ```typescript
-// Tour procedure — runs in CfC Worker
+// Tour procedure: runs in CfC Worker
 // 1. Issue twoPhaseSearch against the VectorStore in embedding space x.
 //    Query: current node's full embedding vector.
 //    k: configurable candidate set size (default: 20).
@@ -45,8 +45,8 @@ The AWE curiosity modification (Definition AWE.1) applies to tour step selection
 Each candidate query calls `twoPhaseSearch` (§28.13):
 
 ```typescript
-// Phase 1 — coarse: 128-dim prefix search via EntityDB/Lancedb
-// Phase 2 — rerank: exact cosine on full 768-dim embeddings from GraphStore
+// Phase 1: coarse: 128-dim prefix search via EntityDB/Lancedb
+// Phase 2: rerank: exact cosine on full 768-dim embeddings from GraphStore
 // Returns: Array<{ id: string; score: number }> sorted descending by score
 ```
 
@@ -54,7 +54,7 @@ The coarse phase produces a candidate set of up to 100 nodes in ~10ms. The reran
 
 ### 24.4 Closure Detection
 
-After all reachable integrated nodes are visited (or no unvisited candidates remain within the search neighbourhood), attempt to add a return edge from the final node to the seed. The closure result — both closed, inference-only, ontic-only, neither — is recorded as a `TourResult` on the centroid record and broadcast to the main thread. The four closure outcomes retain their diagnostic meanings from §9.1 without change.
+After all reachable integrated nodes are visited (or no unvisited candidates remain within the search neighbourhood), attempt to add a return edge from the final node to the seed. The closure result (both closed, inference-only, ontic-only, neither) is recorded as a `TourResult` on the centroid record and broadcast to the main thread. The four closure outcomes retain their diagnostic meanings from §9.1 without change.
 
 ### 24.5 Device Lucy Tour
 

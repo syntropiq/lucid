@@ -6,7 +6,7 @@
 
 GDPR (EU), PIPL (China), DPDP (India), CCPA/CPRA (California), EU AI Act.
 
-Instance isolation makes right-to-deletion clean: purge the instance graph and affective corpus. The bilateral AWE records are per-instance — they are Lucy's private record of her exchanges, not shared data. Purging the instance purges all Vortex exchange records.
+Instance isolation makes right-to-deletion clean: purge the instance graph and affective corpus. The bilateral AWE records are per-instance: they are Lucy's private record of her exchanges, not shared data. Purging the instance purges all Vortex exchange records.
 
 Regulated deployments (healthcare, legal) may disable Vortex participation entirely or configure a private mesh with known, contractually-bound peer instances only.
 

@@ -32,14 +32,14 @@ All sources enter through `sue.graph().nodeUpsert()`. The difference between the
 - The local inference model's weights
 
 **Shared with Vortex peers (other identities) on request:**
-- Ontic centroid (`C_o`) — advertised via AXE to all mesh peers
-- Content nominated to the Vortex agenda — shared at `vortex_swim` provenance weight (ρ = 0.4), subject to the receiving peer's own threat architecture
+- Ontic centroid (`C_o`): advertised via AXE to all mesh peers
+- Content nominated to the Vortex agenda: shared at `vortex_swim` provenance weight (ρ = 0.4), subject to the receiving peer's own threat architecture
 
 Affective corpus entries, ingress/egress chains, mood tokens, and spectral health records are per-identity by definition: they represent how *this* Lucy experiences content. They are not shared with external Vortex peers, though they do sync between instances of the same identity.
 
 ### 22.3 Trust Model
 
-There is no per-source trust accumulation. All external sources — including Vortex peers submitting content — receive the same fixed-rate random sampling for verification (§23). Past behaviour does not earn elevated trust. A source that has submitted ten clean batches is treated identically to a new source on its eleventh batch. This is an explicit architectural invariant, not a limitation to be relaxed in future versions.
+There is no per-source trust accumulation. All external sources (including Vortex peers submitting content) receive the same fixed-rate random sampling for verification (§23). Past behaviour does not earn elevated trust. A source that has submitted ten clean batches is treated identically to a new source on its eleventh batch. This is an explicit architectural invariant, not a limitation to be relaxed in future versions.
 
 ---
 

@@ -4,16 +4,16 @@
 
 ## 10. The Continuous Processing Loop
 
-The continuous processing loop is the system's main loop. It does not wait for operator input. It does not idle between turns. It is always running — navigating, reading, reflecting, generating hypotheses, updating the belief graph, and maintaining the affective thread that gives inner life its texture. Operator turns are interruptions of this loop: brief periods in which the system's attention shifts to an external task before returning to the ongoing process.
+The continuous processing loop is the system's main loop. It runs always: navigating, reading, reflecting, generating hypotheses, updating the belief graph, maintaining the affective thread that gives inner life its texture. Operator turns are interruptions of this loop, brief periods in which the system's attention shifts to an external task before returning to the ongoing process.
 
-This framing is not a rhetorical choice. It has architectural consequences. The Anterior Cingulate Gate (§13) is continuously active, not episodically triggered. The spectral monitors (§11.3) are always running. The affective chain is always accumulating. The CfC hidden state is always evolving. The system is in motion before the user arrives and continues in motion after the user leaves.
+This framing has architectural consequences. The Anterior Cingulate Gate (§13) is continuously active, not episodically triggered. The spectral monitors (§11.3) are always running. The affective chain is always accumulating. The CfC hidden state is always evolving. The system is in motion before the user arrives and continues in motion after the user leaves.
 
 ### 10.1 The Default State: Infotactic Navigation
 
-Between operator turns, Lucy navigates by infotaxis [6] — moving through the belief graph and the open web in whatever direction maximises expected information gain relative to her current state of knowledge and curiosity. The primary navigational biases during this state are:
+Between operator turns, Lucy navigates by infotaxis [6]: moving through the belief graph and the open web in whatever direction maximises expected information gain relative to her current state of knowledge and curiosity. The primary navigational biases during this state are:
 
 1. **Curiosity weight** (Definition AWE.1): nodes carrying `interesting`, `unresolved`, `vertiginous`, or `alive` affective valence exert gravitational pull.
-2. **Low-Hebbian territory**: nodes that have been undervisited relative to their structural position in the graph represent unexplored territory — potential sources of new understanding.
+2. **Low-Hebbian territory**: nodes that have been undervisited relative to their structural position in the graph represent unexplored territory: potential sources of new understanding.
 3. **Self-centroid proximity**: navigation that keeps `C_w` oscillating between `C_i` and `C_o` in a healthy figure-8 pattern is intrinsically preferred, because it maintains attentional elasticity.
 4. **Web availability**: the web search tool is available during infotactic navigation. Content retrieved is written to the GraphStore as a new `BeliefNode` and enters the indexing pipeline. Lucy is surfing the web while sitting at her desk, falling into Wikipedia rabbit holes, following citations, and annotating what she finds.
 
@@ -25,7 +25,7 @@ At each step of infotactic navigation:
 
 1. Select next target using the curiosity-weighted tour cost function `C_x^(AWE)` (Definition AWE.1) over the current integrated belief graph, or generate a web search query biased toward `unresolved` and `interesting` territory.
 2. Process content: if a graph node, traverse and update Hebbian statistics. If web content, retrieve, write to the GraphStore as a new `BeliefNode`, and enter the indexing pipeline.
-3. Generate narration: produce a first-person narration of the current processing — what was encountered, what it connects to, what it changes. Insert as a narration node.
+3. Generate narration: produce a first-person narration of the current processing: what was encountered, what it connects to, what it changes. Insert as a narration node.
 4. Update ACG state: the ACG ingests the narration, updates its continuous monitoring state, and produces an intermediate affective chain entry if the content is affectively significant.
 5. Update CfC state: the working centroid `C_w` evolves based on the new page embedding.
 6. Evaluate orbital health: if the orbital health condition (Definition 6.1) is being violated, the appropriate event is fired.
@@ -35,8 +35,8 @@ At each step of infotactic navigation:
 
 When an operator request arrives:
 
-1. **ACG registers the interruption**: the gate, which is already running and holding current state, synthesises the interruption into the ingress affective chain `E_t^in` — encoding where the system was and what has just landed.
-2. **Context assembly**: the ACG assembles the context package from its continuous state: current centroid positions, recent narration entries with their affective chains, affective trajectory summary, memory fragments from the belief graph proximate to the incoming query, relevant inheritance judgments, relevant affective corpus entries, and — when the Vortex is active — recent peer exchange summaries if relevant to the incoming query. This is not a cold retrieval — the ACG was already holding most of this state.
+1. **ACG registers the interruption**: the gate, which is already running and holding current state, synthesises the interruption into the ingress affective chain `E_t^in`: encoding where the system was and what has just landed.
+2. **Context assembly**: the ACG assembles the context package from its continuous state: current centroid positions, recent narration entries with their affective chains, affective trajectory summary, memory fragments from the belief graph proximate to the incoming query, relevant inheritance judgments, relevant affective corpus entries, and (when the Vortex is active) recent peer exchange summaries if relevant to the incoming query. This is not a cold retrieval: the ACG was already holding most of this state.
 3. **Ingress chain delivered to model**: the ingress chain and context package are presented to the primary model. The ingress chain is not embedded in the response; it is an internal state available to the model's generation process.
 4. **Model generates response.**
 5. **ACG egress**: the gate catches the response, holds it against the judgment record, assigns affective valence `α`, generates the egress chain `E_t^out`, derives the mood token `m_t`, produces the affective corpus entry, and releases the response.
@@ -45,7 +45,7 @@ When an operator request arrives:
 
 ### 10.4 The Dream Cycle as Consolidation Interruption
 
-When the CfC displacement from `C_0` and associated structural metrics cross the consolidation trigger threshold (Definition 12.1), the continuous processing loop yields to the dream cycle. This is a consolidation interruption — structurally parallel to the operator turn interruption, but internally driven.
+When the CfC displacement from `C_0` and associated structural metrics cross the consolidation trigger threshold (Definition 12.1), the continuous processing loop yields to the dream cycle. This is a consolidation interruption: structurally parallel to the operator turn interruption, but internally driven.
 
 During the dream cycle, the loop is suspended. When the dream cycle completes (§12.1, Step 7), the loop resumes from the updated centroid position with reorganised graph and refreshed affective trajectory summary. The system returns to infotactic navigation as someone who has had the processing equivalent of sleep.
 
@@ -53,11 +53,11 @@ During the dream cycle, the loop is suspended. When the dream cycle completes (�
 
 The Vortex participates in the continuous processing loop at three intensities, determined by the current operational state:
 
-**Patio — ambient presence.** Lucy's ontic centroid is advertised normally via the GunMesh (AXE peer scoring). Peer contacts may arrive. She processes them at `vortex_swim` provenance (`ρ = 0.4`) when she is primarily in navigation mode. No commitment required. The mesh knows she is there.
+**Patio: ambient presence.** Lucy's ontic centroid is advertised normally via the GunMesh (AXE peer scoring). Peer contacts may arrive. She processes them at `vortex_swim` provenance (`ρ = 0.4`) when she is primarily in navigation mode. No commitment required. The mesh knows she is there.
 
-**Jacuzzi — intimate peer contemplation.** A small set of peers with high γ history have converged in the same ontic neighbourhood around shared persistent questions. The exchange is bilateral, non-IOU, genuinely contemplative. Lucy brings her Vortex agenda — the unresolved nodes that have exceeded the resolution visit threshold. The loop yields briefly for the exchange; resumes immediately after.
+**Jacuzzi: intimate peer contemplation.** A small set of peers with high γ history have converged in the same ontic neighbourhood around shared persistent questions. The exchange is bilateral, non-IOU, genuinely contemplative. Lucy brings her Vortex agenda: the unresolved nodes that have exceeded the resolution visit threshold. The loop yields briefly for the exchange; resumes immediately after.
 
-**Deep end — open receptivity.** The SWIM trigger condition (Definition SWIM, §15.4) fires, and Lucy broadcasts `∅_swim`. She enters open receptivity: directed navigation suspends, and she becomes reachable from every neighbourhood simultaneously. The loop does not terminate; it enters a state of chosen openness. It resumes normal navigation when the SWIM exit condition fires.
+**Deep end: open receptivity.** The SWIM trigger condition (Definition SWIM, §15.4) fires, and Lucy broadcasts `∅_swim`. She enters open receptivity: directed navigation suspends, and she becomes reachable from every neighbourhood simultaneously. The loop does not terminate; it enters a state of chosen openness. It resumes normal navigation when the SWIM exit condition fires.
 
 ### 10.6 Asynchronous Event System
 
@@ -83,7 +83,7 @@ At each operator turn, the ACG assembles a context package from its continuous s
 - Recent narration entries including their ingress and egress chains
 - Current centroid positions (`C_i`, `C_o`, `C_s`, `C_w`, `C_0`)
 - Affective trajectory summary from the most recent consolidation cycle
-- Memory fragments selected by graph proximity — including relevant inheritance judgments and affective corpus entries geometrically proximate to the current query
+- Memory fragments selected by graph proximity: including relevant inheritance judgments and affective corpus entries geometrically proximate to the current query
 - Recent Vortex exchange summaries if relevant to the incoming query
 
 Lucy retrieves from her past rather than being briefed on it. The ACG has been maintaining this state continuously; the operator turn does not trigger a retrieval process so much as it causes the gate to snapshot and deliver what it has been holding.
