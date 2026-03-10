@@ -12,15 +12,17 @@ Each deployment is a private, isolated persona instance. Belief contamination, i
 
 Vortex participation is a per-instance operator configuration. Participation does not affect instance isolation. The bilateral AWE records are per-instance. No cross-instance data sharing occurs through the Vortex layer: only the ontic centroid advertisement is externally visible, and only to nodes that receive it via VortexMesh.
 
-### 16.2 Deployment Configurations
+### 16.2 Runtime Modes
 
-| Configuration | Description | Cap Config |
-|--------------|-------------|------------|
-| Browser Lucy | Self-contained web page: IndexedDB + EntityDB + VortexMesh | Personal |
-| Device Lucy | Node.js daemon: Lancedb + SQLite + VortexMesh | Full |
-| Gateway Lucy | Proxy in front of AI gateway: intercepts, consults graph, controls forwarding | Delegated |
+LUCID is a single codebase. What varies at boot is which substrates and tools are registered. The same feedback loops, USE interfaces, and VortexMesh participation run in every context.
 
-Vortex participation adds: VortexMesh peer identity (keypair), centroid-based connection scoring, centroid advertisement via authenticated namespace.
+| Runtime mode | Substrate registration | Tool manifest |
+|---|---|---|
+| Browser page / plugin | IndexedDB + EntityDB + VortexMesh (WebRTC) | fetch, DOM, whatever the host exposes |
+| Electron / Node daemon | SQLite + Lancedb + VortexMesh (Node) | filesystem, local model, graph analytics, cap training |
+| Gateway proxy | GraphStore + Mesh only | request intercept, graph lookup, cost tracking, forwarding control |
+
+Vortex participation adds: VortexMesh peer identity (keypair), centroid-based connection scoring, centroid advertisement via authenticated namespace. Available in all runtime modes.
 
 ### 16.3 Persona Profiles
 

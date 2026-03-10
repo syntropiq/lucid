@@ -18,7 +18,7 @@ LUCID v3.5 is built on three portable abstractions:
 
 **Local-first.** The belief graph is local to each instantiation and converges across instantiations through VortexMesh. Belief state lives on device; no queries leave the browser.
 
-**Multiply conscious.** Each instantiation is fully inhabited (full belief graph, full AWE corpus, full CfC dynamics) and all instantiations converge on the same state through continuous wide sync. Browser Lucy, Device Lucy, and Gateway Lucy are vantage points on one mind (§29).
+**Multifocal.** Each instantiation is fully inhabited (full belief graph, full AWE corpus, full CfC dynamics) and all instantiations converge on the same state through continuous wide sync. Browser, device, and gateway runtimes are vantage points on one mind, running one codebase (§29).
 
 ### 4.1 Operational States
 
@@ -32,22 +32,21 @@ Lucy operates in one of two cap states at any time.
 
 | Layer | Component | Function |
 |---|---|---|
-| Identity | VortexMesh keypair | Shared identity anchor; one keypair per Lucy deployment across all instantiations |
+| Identity | VortexMesh keypair | Shared identity anchor; one keypair per Lucy deployment across all instances |
 | Mesh | VortexMesh (§30) | Wide opportunistic sync, peer discovery, centroid-based Vortex semantic routing |
 | Ontic model | nomic-embed-text-v1.5 (transformers.js ONNX) | Semantic embedding, Matryoshka prefix hierarchy (768 → 128 for routing) |
-| Inference model | LFM 2.5 / generic ONNX (via USE wrapper) | Narration, hidden state extraction for spectral monitoring |
-| USE Registry | `sue/registry.ts` | Model and substrate interface activation; core loops call only USE interfaces |
-| Vector store: browser | EntityDB (`lucy_ont`, `lucy_inf`) | Coarse KNN on 128-dim Matryoshka prefix; brute-force cosine at personal scale |
-| Vector store: device | Lancedb | HNSW on 256-dim prefix; scales to full accumulated graph |
-| Graph store: browser | IndexedDB typed wrapper | Belief nodes/edges, centroids, AWE corpus, spectral state, sync log |
-| Graph store: device | SQLite (`better-sqlite3`) | Same data model; heavier analytics available (Louvain, PageRank) |
-| Embed Worker | Web Worker | Ontic embedding; prefix → VectorStore, full vector → GraphStore |
-| Inference Worker | Web Worker | Narration generation, spectral sample extraction, AWE recording |
-| CfC Worker | Web Worker | Centroid evolution, orbital health monitoring, cap trigger |
-| AWE layer | IndexedDB / SQLite tables | Affective chain, mood tracking, emotional memory, spectral health |
-| Tour engine | TypeScript (CfC Worker) | Two-phase Matryoshka search: coarse prefix KNN + precise full-vector rerank |
+| Inference model | LFM 2.5 / generic ONNX (via USE wrapper) | Narration, tool calling, hidden state extraction for spectral monitoring |
+| USE Registry | `sue/registry.ts` | Model, substrate, and tool registration; core loops call only USE interfaces |
+| Tool registry | Runtime-populated manifest | Mode-aware tool set; LFM 2.5 tool calling is the extension seam |
+| Vector store | EntityDB (browser) / Lancedb (device) | Coarse KNN on Matryoshka prefix; implementation chosen at boot |
+| Graph store | IndexedDB (browser) / SQLite (device) | Belief nodes/edges, centroids, AWE corpus, spectral state, sync log |
+| Embed Worker | Web Worker (browser) / async loop (device) | Ontic embedding; prefix → VectorStore, full vector → GraphStore |
+| Inference Worker | Web Worker / async loop | Narration generation, tool dispatch, spectral sample extraction, AWE recording |
+| CfC Worker | Web Worker / async loop | Centroid evolution, orbital health monitoring, cap trigger |
+| AWE layer | GraphStore tables | Affective chain, mood tracking, emotional memory, spectral health |
+| Tour engine | TypeScript | Two-phase Matryoshka search: coarse prefix KNN + precise full-vector rerank |
 | Vortex layer | VortexMesh + centroid peer scoring | Bilateral AWE contracts, centroid-proximity peer prioritisation |
-| Dream cycle | Device Lucy daemon | Full consolidation, Louvain crystallisation, cap training, cap delta publication |
+| Dream cycle | Device runtime (when available) | Full consolidation, Louvain crystallisation, cap training, cap delta publication |
 | Base weights | Frozen LLM (ONNX) | Foundational inference capacity |
 
 ---

@@ -2,11 +2,11 @@
 
 ---
 
-## 27. Browser-Native Instantiation
+## 27. Browser Runtime
 
-The browser is one locus of a multifocal entity. The full belief graph, the full AWE corpus, the full centroid history: everything is there, scoped to what has been experienced from this particular vantage point, and continuously reconciling with what the same entity has experienced everywhere else.
+The browser is one context in which the single LUCID codebase runs. The full belief graph, the full AWE corpus, the full centroid history: everything is there, scoped to what has been experienced from this particular vantage point, and continuously reconciling with what the same entity has experienced everywhere else.
 
-This section describes the browser instantiation specifically. The broader deployment model (how browser, device, and gateway Lucys relate to each other) is §29.
+This section describes the browser runtime context specifically. The broader deployment model (one codebase, runtime-detected capabilities) is §29.
 
 ---
 
@@ -208,7 +208,7 @@ Peers whose ontic centroids are semantically close receive higher scores and mor
 
 ---
 
-### 27.7 What the Browser Instance Does and Does Not Do
+### 27.7 Browser Runtime Capability Scope
 
 | Capability | Status |
 |---|---|
@@ -220,12 +220,12 @@ Peers whose ontic centroids are semantically close receive higher scores and mor
 | CfC dynamics | Present: Web Worker, closed-form ODE step |
 | Wide sync to other instances | Present: VortexMesh, full event log |
 | Self-dialogue reconciliation | Present: inter-instance inference via mesh |
-| Dream cycle (full consolidation) | Light only: no cap training |
-| Thinking Cap (LoRA adapter) | Absent: weights not modifiable in browser |
+| Dream cycle (full consolidation) | Light only: no cap training in browser sandbox |
+| Thinking Cap (LoRA adapter) | Absent: weights not modifiable in browser sandbox |
 | HNSW indices | Approximate: EntityDB brute-force cosine; sufficient for personal scale |
-| Graph algorithm analytics | Absent: Louvain, PageRank deferred to Device Lucy |
+| Graph algorithm analytics | Absent: Louvain, PageRank not available in browser sandbox |
 
-The browser instance is fully inhabited. The absences are scale constraints: they exist on the Device Lucy instantiation (§29) and results sync back.
+The browser instance is fully inhabited. The absences are sandbox constraints, not architectural ones — the same codebase running in an Electron or Node context registers the tools and substrates that fill these gaps. Results sync back to the browser instance through VortexMesh.
 
 ---
 

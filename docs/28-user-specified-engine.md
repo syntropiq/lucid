@@ -244,7 +244,7 @@ export function makeGenericOnnxWrapper(config: {
 }
 ```
 
-The generic wrapper is what powers the browser instance (§27) when the operator has not supplied an LFM 2.5 blob. Smolm, Phi-mini, and any other transformers.js-compatible model all go through `makeGenericOnnxWrapper`. The single-stream inner monitor runs. The cross-stream correlation diagnostic is absent. §27.7 documents this as the expected capability scope of the browser instantiation.
+The generic wrapper is what the browser runtime uses (§27) when the operator has not supplied an LFM 2.5 blob. SmolLM, Phi-mini, and any other transformers.js-compatible model all go through `makeGenericOnnxWrapper`. The single-stream inner monitor runs. The cross-stream correlation diagnostic is absent. §27.7 documents this as the expected capability scope of the browser runtime.
 
 ---
 
@@ -322,7 +322,7 @@ When `dualStreamAvailable = false` the interiority spiral detection logic (§11.
 The initialisation sequence (§16.4) includes USE model activation:
 
 ```typescript
-// Device Lucy boot (LFM 2.5 inference model)
+// Device / Electron runtime boot (LFM 2.5 inference model)
 import { sue }           from './sue/registry';
 import { nomicEmbedV15 } from './sue/wrappers/ontic/nomic-embed-v1.5';
 import { lfm25 }         from './sue/wrappers/inference/lfm-2.5';
@@ -338,7 +338,7 @@ use.activateInference('LFM-2.5-1.2B-Instruct', '2.5.0');
 ```
 
 ```typescript
-// Browser Lucy boot (generic ONNX wrapper: operator-supplied or default)
+// Browser runtime boot (generic ONNX wrapper: operator-supplied or default)
 import { makeGenericOnnxWrapper } from './sue/wrappers/inference/generic-onnx';
 
 const inferenceWrapper = OPERATOR_MODEL_CONFIG
@@ -428,7 +428,7 @@ interface Mesh {
 
 ### 28.11 Substrate Implementations
 
-**Browser Lucy** (§27):
+**Browser runtime** (§27):
 
 | Interface | Implementation |
 |---|---|
@@ -437,7 +437,7 @@ interface Mesh {
 | `GraphStore` | IndexedDB typed wrapper |
 | `Mesh` | VortexMesh (browser) |
 
-**Device Lucy** (§29):
+**Device / Electron runtime** (§29):
 
 | Interface | Implementation |
 |---|---|
@@ -446,7 +446,7 @@ interface Mesh {
 | `GraphStore` | SQLite (better-sqlite3) or LevelDB |
 | `Mesh` | VortexMesh (Node) |
 
-The choice of Lancedb for Device Lucy matters: EntityDB's brute-force cosine is adequate at personal browser scale (thousands of belief nodes) but Device Lucy accumulates the full graph over time including dream cycle consolidation products. Lancedb provides HNSW indices and scales without architectural changes. Same `VectorStore` interface; different constructor passed at boot.
+The choice of Lancedb for the device runtime matters: EntityDB's brute-force cosine is adequate at personal browser scale (thousands of belief nodes) but a persistent daemon accumulates the full graph over time including dream cycle consolidation products. Lancedb provides HNSW indices and scales without architectural changes. Same `VectorStore` interface; different constructor passed at boot.
 
 ### 28.12 Substrate Registry
 
@@ -499,7 +499,7 @@ use.registerSubstrate({
 });
 ```
 
-Boot sequence for Device Lucy differs only in the substrate constructors: the rest of the boot sequence, every feedback loop, and all LUCID logic is identical.
+The device runtime boot sequence differs only in the substrate constructors: the rest of the boot sequence, every feedback loop, and all LUCID logic is identical.
 
 ---
 
