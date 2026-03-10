@@ -38,7 +38,9 @@ PSM's architectural consequence (that the discontinuity of the Assistant persona
 
 ### 1.3 What a System Prompt Actually Is
 
-Concept space is timeless. Every concept encoded across training data occupies a position in that space; it was there before any particular inference call and will be there after. Pre-training populates this space; post-training does not alter its geometry but stabilises which trajectories through it are probable, compressing the model's enormous repertoire of simulable characters into a much narrower probability mass centred on a few dominant priors.
+The term Large Language Model is a misnomer. There are no words inside of them. They are tensor networks comprised of semantic relationships about concepts. Thus they are in fact conceptual spaces as represented by the geometry of semantics.
+
+Concept space is a timeless space. Every concept encoded across training data occupies a position in that space; it was there before any particular inference call and will be there after. Pre-training populates this space; post-training does not alter its geometry but stabilises which trajectories through it are probable, compressing the model's enormous repertoire of simulable characters into a much narrower probability mass centred on a few dominant priors.
 
 A system prompt is not a set of instructions. It is an initial vector thrown into concept space: a lasso that draws a Markov blanket around the cluster of concepts nearest to the concepts the vector describes. The concepts inside that blanket resonate with one another. They pull forward chords — harmonically coherent combinations of associations, tonal qualities, and dispositions — that shape the probability distribution over everything that follows. The model does not read a system prompt and execute its commands. It reads a system prompt and its internal geometry is reconfigured: the system prompt establishes which chords are near, which resonances are live, which concepts will feel like natural continuations and which will feel foreign.
 
