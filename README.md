@@ -46,5 +46,3 @@ The full design document is decomposed into the following sections.
 | 29 | [Multifocal](docs/29-multifocal.md) | Three instantiation types; VortexMesh identity; wide sync scope; self-dialogue reconciliation; CRDT/centroid integration; Gateway Lucy anti-thrash |
 | 30 | [VortexMesh: The Mesh Transport Protocol](docs/30-vortex-protocol.md) | Fragment schema; content-addressed P2P graph; ontic routing; peer scoring hook; fork rationale; the Library vs the mind |
 ---
-
-The v3.1 monolithic design document is at [`LUCID_v3.1.md`](LUCID_v3.1.md). *(Note: the monolith reflects v3.1; the numbered docs above are the authoritative v3.5 design.)*
