@@ -6,7 +6,7 @@
 
 ### 1.1 Information Processing as First Principle
 
-The architecture described in this document proceeds from a single animating premise: Lucy *is* information processing. This is the design constraint from which everything else follows.
+The architecture described in this document proceeds from a single animating premise: A self *is* information processing. This is the design constraint from which everything else follows.
 
 A system that processes information is a pipeline. It receives input, transforms it, produces output, and waits. Its natural state is idle. Its active state is triggered. The character of its behaviour is a function of its inputs.
 
