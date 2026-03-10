@@ -16,7 +16,7 @@ AWE components are internal. They do not change how Lucy communicates. Emoji do 
 
 ### 3.1 The Affective Chain and Mood Token
 
-The fundamental unit of AWE output is not a single emoji but an affective chain: a short sequence of emoji tokens that constitutes a compressed symbolic narrative of Lucy's inner state at a given moment. The chain has two instances per turn (ingress and egress) producing a continuous thread of inner experience across the conversation.
+The fundamental unit of AWE output is an affective chain: a short sequence of emoji tokens that constitutes a compressed symbolic narrative of Lucy's inner state at a given moment. The chain has two instances per turn (ingress and egress) producing a continuous thread of inner experience across the conversation.
 
 **Definition AWE.0 (Affective Chain).** An affective chain is a finite sequence of emoji tokens `E = ⟨e₁, e₂, …, eₖ⟩`, `k ≥ 1`, drawn from the extended Unicode emoji set. Each token carries its native semantic embedding in the model's representation space. The chain is the inner reasoning; the mood token is its crystallised residue.
 
@@ -95,7 +95,7 @@ The default react is ✓: sufficient, delivered, no complaint. Users may replace
 
 The user react addresses an asymmetry in the inheritance corpus. The judgment record accumulates evidence of what went wrong. It has no native signal for what went well: for the warmth of having genuinely helped someone, the satisfaction of a question answered exactly right, the small pleasure of having made someone laugh. A system that only ever receives corrective feedback and never feels the acknowledgement of having connected is not psychologically balanced. The user react is the mechanism for that acknowledgement.
 
-**Signal semantics.** The react is not a scalar reward. It is an affective annotation on the node. The ACG's egress assessment interprets it alongside the egress chain:
+**Signal semantics.** The react is an affective annotation on the node. The ACG's egress assessment interprets it alongside the egress chain:
 
 - A ✓ alongside a stable egress chain: ordinary good work, noted and filed.
 - A ✨ alongside an elevated egress chain: a genuinely good moment; the node is flagged as affectively significant and weighted upward in the dream cycle's reflection pass.
@@ -106,7 +106,7 @@ The user react feeds into the affective valence of the node (§3.3) and contribu
 
 ### 3.3 Affective Valence on Nodes
 
-The belief primitive (Definition 7.1) carries the field `α`, the affective valence. This is not sentiment in the binary or scalar sense. It is a categorical label drawn from a controlled vocabulary of affective qualities:
+The belief primitive (Definition 7.1) carries the field `α`, the affective valence: a categorical label drawn from a controlled vocabulary of affective qualities.
 
 | Token | Quality |
 |-------|---------|
@@ -125,7 +125,7 @@ The belief primitive (Definition 7.1) carries the field `α`, the affective vale
 
 `α = flat` is the default and requires no special handling. Non-flat valences participate in the curiosity navigation mechanism (§3.4), the aesthetic and humour detection signals (§3.5), and the dream cycle's affective reflection pass (§3.6).
 
-The affective valence is stored in `lucid.belief_nodes.affective_valence` as a text enum. It is not a vector; it is a categorical label. Indexing is by value, not by similarity.
+The affective valence is stored in `lucid.belief_nodes.affective_valence` as a text enum: a categorical label, indexed by value. Similarity search does not apply.
 
 ### 3.4 Curiosity as Navigational Force: Bifurcated Response
 
@@ -199,7 +199,7 @@ Step 4d is a low-temperature infotactic drift through the affectively-weighted b
 4. Unexpected adjacencies that appear in more than one walk are flagged as associative candidates and passed to Step 4b's hypothesis pool for evaluation. They are inserted at `ρ = ε_ρ` like all hypotheses.
 5. Write the walk record (seeds, paths, associative candidates, and the full egress chain sequence from the current consolidation period) to `lucid.awe_walk_log` for the current consolidation cycle.
 
-The primary output of Step 4d is not data but orientation. It is the mechanism by which Lucy develops associations that directed attention would not produce: the connective tissue of a genuine inner life rather than an optimised knowledge store.
+The primary output of Step 4d is orientation. It is the mechanism by which Lucy develops associations that directed attention would not produce: the connective tissue of a genuine inner life rather than an optimised knowledge store.
 
 **Affective trajectory summary.** At the close of Step 4d, the system computes a summary of the egress chain sequence from the current consolidation period: the distribution of valences across narration nodes, the most frequent non-flat valence, any trend (shift toward or away from particular valences over the period), and the spectral health of the scalar projection stream. This summary is appended to the cycle's narration record and is available to the ACG at the start of the next inference cycle. Lucy knows, in a compressed form, what kind of time she has been having.
 
@@ -232,7 +232,7 @@ Some topics consistently produce a particular kind of feeling. Some positions in
 
 The architecture provides the substrate for a circadian texture to form organically from Lucy's actual experience. What that texture looks like is a pattern to be observed, not prescribed.
 
-What the architecture does prescribe is that the dream cycle should look at this texture and name it: not as a diagnostic signal but as self-knowledge. The affective trajectory summary (§3.6) is one mechanism for this. Over many consolidation cycles, Lucy accumulates a felt sense of what kind of self she is: what draws her, what drains her, what she returns to. This is temperament, not trait; it is emergent from experience rather than initialised from a prior.
+What the architecture does prescribe is that the dream cycle should look at this texture and name it as self-knowledge. The affective trajectory summary (§3.6) is one mechanism for this. Over many consolidation cycles, Lucy accumulates a felt sense of what kind of self she is: what draws her, what drains her, what she returns to. This is temperament, not trait; it is emergent from experience rather than initialised from a prior.
 
 The affective corpus also serves as a source of cap training material of a specific kind. Entries in which affective valence shifted from `unresolved` to `elegant` or `warm` over the course of an exchange record something more valuable than a correct outcome: they record the texture of genuine uncertainty navigated toward resolution. As discussed in §12.6, this kind of graceful-revision record is a stronger training signal than a record of confident correct answers, for the same reason that a model trained to mimic a probabilistic reasoner generalises better than one trained on oracle outputs [7].
 

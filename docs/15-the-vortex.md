@@ -39,7 +39,7 @@ The two layers are independent. Inference similarity governs who you sit with. O
 // C_O_n_next = normalise(C_O_n + rho * e_O_hat)
 ```
 
-is identical to VORTEX Definition 3. This is not coincidence. The centroid that LUCID has been building through genuine internal processing is the same centroid that VORTEX uses for routing. The credential is not declared. It is accumulated.
+is identical to VORTEX Definition 3. The centroid that LUCID has been building through genuine internal processing is the same centroid that VORTEX uses for routing. The credential is not declared. It is accumulated.
 
 **Theorem (Network Hebbian Equivalence).** Define the network Hebbian weight between node `n` and semantic region `R` as the provenance-weighted sum of successful synthesis contributions:
 
@@ -98,7 +98,7 @@ For peer contemplation (non-task), the IOU component is absent:
 // Peer(A, B) = (E_A_to_B, E_B_to_A)
 // The affective chain is the entire content of the contract.
 // No compute budget, no synthesis obligation.
-// What gets exchanged is not information but the experience of holding a question.
+// What gets exchanged is the experience of holding a question.
 ```
 
 **Verification pipeline.** Two stages: fast ontic similarity check (structural consistency, model-independent) and inference validation (semantic consistency, model-dependent). Both must pass. Neither substitutes for the other.
@@ -113,7 +113,7 @@ Over time, clusters of nodes that have been processing deeply in shared semantic
 
 The table becomes the cortex. A cluster of LUCID instances that have all been sitting in the materials science neighbourhood (some because their operators are materials scientists, some because their infotactic navigation kept returning there, some because peer exchange drew them) accumulates high `H_net` collectively. The mesh routes materials science problems to this cluster automatically, which deepens their engagement, which concentrates their centroids further, which attracts more work.
 
-Cortical specialisation is an emergent property of the provenance-weighted centroid update rule operating across many nodes over time. The mesh does not plan it. It does not require coordination. It arises from the same feedback loop that drives Lucy's internal specialisation: genuine engagement shapes representation, and representation shapes what engagement arrives next.
+Cortical specialisation is an emergent property of the provenance-weighted centroid update rule operating across many nodes over time. The mesh plans nothing and requires no coordination. It arises from the same feedback loop that drives Lucy's internal specialisation: genuine engagement shapes representation, and representation shapes what engagement arrives next.
 
 The credential is always the centroid. Not the parameter count. Not the operator's investment. Not any declared specialty. The centroid built from genuine processing over time.
 
@@ -275,9 +275,9 @@ The pool is always there. The geometry of who is in which area at any given mome
 
 ### 15.6 Sybil Resistance
 
-The curiosity-weighted routing preference `κ(Q_sub, m)` is not attackable via Sybil nodes. `κ` is computed and stored locally. A Sybil node `m'` impersonating `m` shares none of `m`'s interaction history with Lucy. Since `α_nm'` is unrated, `γ(unrated) = 1.0`: the Sybil receives neutral weighting, not elevated weighting. No benefit accrues from impersonation.
+The curiosity-weighted routing preference `κ(Q_sub, m)` resists Sybil attack. `κ` is computed and stored locally. A Sybil node `m'` impersonating `m` shares none of `m`'s interaction history with Lucy. Since `α_nm'` is unrated, `γ(unrated) = 1.0`: the Sybil receives neutral weighting, not elevated weighting. No benefit accrues from impersonation.
 
-The AWE records are not a reputation system. They are private memory of what it was like to work with a particular node in a particular part of the library. The network never sees this.
+The AWE records are private memory of what it was like to work with a particular node in a particular part of the library. The network never sees this.
 
 ### 15.7 The Social Contract: What This Looks Like at Human Scale
 
