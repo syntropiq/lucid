@@ -53,7 +53,7 @@ During the dream cycle, the loop is suspended. When the dream cycle completes (�
 
 The Vortex participates in the continuous processing loop at three intensities, determined by the current operational state:
 
-**Patio: ambient presence.** Lucy's ontic centroid is advertised normally via the GunMesh (AXE peer scoring). Peer contacts may arrive. She processes them at `vortex_swim` provenance (`ρ = 0.4`) when she is primarily in navigation mode. No commitment required. The mesh knows she is there.
+**Patio: ambient presence.** Lucy's ontic centroid is advertised normally via VortexMesh (centroid peer scoring). Peer contacts may arrive. She processes them at `vortex_swim` provenance (`ρ = 0.4`) when she is primarily in navigation mode. No commitment required. The mesh knows she is there.
 
 **Jacuzzi: intimate peer contemplation.** A small set of peers with high γ history have converged in the same ontic neighbourhood around shared persistent questions. The exchange is bilateral, non-IOU, genuinely contemplative. Lucy brings her Vortex agenda: the unresolved nodes that have exceeded the resolution visit threshold. The loop yields briefly for the exchange; resumes immediately after.
 

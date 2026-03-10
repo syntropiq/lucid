@@ -18,8 +18,8 @@ This section documents the explicit boundary between what LUCID delegates to USE
 | Centroid persistence | `GraphStore.centroidPut/Get()` |
 | AWE and spectral record persistence | `GraphStore.awePut()`, `spectralPut()` |
 | Sync log durability | `GraphStore.syncLogAppend()`, `syncLogPending()` |
-| Wide sync transport | `Mesh.publish()`, `subscribe()`: GunDB with DAM/HAM |
-| Peer discovery and connection management | `Mesh.advertise()`, `observe()`, `peers()`: GunDB AXE |
+| Wide sync transport | `Mesh.publish()`, `subscribe()`: VortexMesh CRDT transport |
+| Peer discovery and connection management | `Mesh.advertise()`, `observe()`, `peers()`: VortexMesh centroid routing |
 | HNSW index maintenance (device) | Lancedb internal: compaction and rebuild handled automatically |
 | Graph analytics (dream cycle) | `src/device/analytics.ts`: Louvain community detection, PageRank |
 

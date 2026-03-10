@@ -16,7 +16,7 @@ This section describes the browser instantiation specifically. The broader deplo
 |---|---|
 | Vector storage + KNN | EntityDB: two collections: `lucy_ont` (768-dim) and `lucy_inf` (inference-dim) |
 | Belief graph + AWE + local state | IndexedDB via typed wrapper: all rich schema, high-churn structures |
-| Mesh + wide sync | GunDB over WebRTC/WebSockets: the nervous system between instances |
+| Mesh + wide sync | VortexMesh over WebRTC/WebSockets: the nervous system between instances |
 | Embeddings | transformers.js: nomic-embed-text-v1.5 (ontic), operator-supplied ONNX (inference) |
 | Model interfaces | USE (§28): same OnticInterface / InferenceInterface, browser implementations |
 | Background processing | Web Workers: Embed Worker, Inference Worker, CfC Worker |
@@ -55,7 +55,7 @@ Centroids (`C_i`, `C_o`, `C_s`, `C_w`, `C_0`) are maintained as small typed reco
 
 ### 27.3 IndexedDB Schema
 
-The belief graph lives in IndexedDB. All rich structure (node metadata, edge topology, AWE corpus, spectral history, centroid records) is stored here locally before being mirrored into the Gun mesh.
+The belief graph lives in IndexedDB. All rich structure (node metadata, edge topology, AWE corpus, spectral history, centroid records) is stored here locally before being mirrored into VortexMesh.
 
 Object stores:
 
@@ -70,7 +70,7 @@ sync_log            id, event_type, payload, synced_at, instance_id
 reconciliation_log  id, node_ids, dialogue, resolved_node_id, created_at
 ```
 
-All writes to belief_nodes, awe_corpus, and centroids also write a corresponding entry to `sync_log`. The Gun mesh drains the sync log and propagates events to other instances. On receipt of a remote event, the local instance hydrates from the event payload into its IndexedDB: Gun is never queried directly for graph state.
+All writes to belief_nodes, awe_corpus, and centroids also write a corresponding entry to `sync_log`. VortexMesh drains the sync log and propagates events to other instances. On receipt of a remote event, the local instance hydrates from the event payload into its IndexedDB: VortexMesh is never queried directly for graph state.
 
 ---
 
@@ -81,7 +81,7 @@ Three Web Workers. Each is isolated; all state lives in IndexedDB/EntityDB, not 
 ```
 ┌─────────────────────────────────┐
 │  Main Thread                    │
-│  UI · Gun subscriptions ·       │
+│  UI · Mesh subscriptions ·      │
 │  IndexedDB reads for display    │
 └────┬──────────┬─────────────────┘
      │          │
@@ -105,31 +105,26 @@ Three Web Workers. Each is isolated; all state lives in IndexedDB/EntityDB, not 
 
 ---
 
-### 27.5 Gun Mesh Integration
+### 27.5 VortexMesh Integration
 
-GunDB provides the nervous system between instances. The browser instance initialises a Gun node at boot:
+VortexMesh provides the nervous system between instances. The browser instance initialises a mesh node at boot:
 
 ```typescript
-import Gun from 'gun';
-import 'gun/sea';
-import 'gun/axe';
+import { VortexMesh } from 'vortex-mesh';
 
-const gun = Gun({
-  peers: RELAY_PEERS,   // optional: Gun works P2P without relays
-  localStorage: false,  // IndexedDB is the store; Gun is transport only
+const mesh = await VortexMesh.connect({
+  keypair: LUCY_KEYPAIR,   // generated once, stored securely
+  peers:   RELAY_PEERS,    // optional: VortexMesh is fully P2P without relays
+  storage: false,          // IndexedDB is the store; VortexMesh is transport only
 });
 
-// Identity: each Lucy instance has a SEA keypair under one user identity
-const user = gun.user();
-await user.auth(LUCY_PAIR);  // SEA keypair from secure local storage
-
-// Personal namespace: all sync events go here
-const mind = user.get('lucid').get('mind');
+// Authenticated namespace: all sync events go here
+const mind = mesh.authenticated().get('lucid').get('mind');
 ```
 
-The `mind` graph node is the shared belief space. All instances writing to the same `user` identity (same SEA keypair) converge on the same state. This is the "one mind" property: there is no primary/secondary, no source of truth: every instance is the mind, observed from its current location.
+The `mind` graph node is the shared belief space. All instances connecting with the same keypair converge on the same state. This is the "one mind" property: there is no primary/secondary, no source of truth: every instance is the mind, observed from its current location.
 
-**Sync log drain.** A background loop drains `sync_log` entries into Gun:
+**Sync log drain.** A background loop drains `sync_log` entries into VortexMesh:
 
 ```typescript
 setInterval(async () => {
@@ -141,7 +136,7 @@ setInterval(async () => {
 }, SYNC_INTERVAL_MS);
 ```
 
-**Incoming events.** Gun subscription fires on new events from remote instances:
+**Incoming events.** VortexMesh subscription fires on new events from remote instances:
 
 ```typescript
 mind.get('events').map().on(async (event, id) => {
@@ -153,11 +148,11 @@ mind.get('events').map().on(async (event, id) => {
 
 ---
 
-### 27.6 Centroid Advertisement (AXE Integration)
+### 27.6 Centroid Advertisement and Peer Scoring
 
-GunDB's AXE layer handles peer routing optimisation. LUCID plugs ontic centroid proximity into AXE's peer scoring to implement Vortex routing without libp2p.
+VortexMesh exposes a peer scoring hook. LUCID plugs ontic centroid proximity into this hook to implement Vortex routing without libp2p.
 
-Peer scoring uses binary quantization (§28.13): each peer's `c_o` is stored as both a full Float32Array (768-dim, for precise work-packet routing) and a 16-byte binarized form (128-dim packed into bits, for AXE scoring). AXE scoring uses Hamming similarity (XOR + popcount) which is hardware-accelerated and costs nothing at the scale of connected peers. This means AXE can re-score all peers on every local centroid update without batching or throttle.
+Peer scoring uses binary quantization (§28.13): each peer's `c_o` is stored as both a full Float32Array (768-dim, for precise work-packet routing) and a 16-byte binarized form (128-dim packed into bits, for connection scoring). Scoring uses Hamming similarity (XOR + popcount) which is hardware-accelerated and costs nothing at the scale of connected peers. VortexMesh can re-score all peers on every local centroid update without batching or throttle.
 
 ```typescript
 import { binarize, hammingScore } from '../core/vector-utils';
@@ -169,7 +164,7 @@ const peerCache = new Map<string, { full: Float32Array; bits: Uint8Array }>();
 function cachePeerCentroid(peerId: string, c_o: Float32Array) {
   peerCache.set(peerId, {
     full: c_o,
-    bits: binarize(c_o, 128),   // 16 bytes: used for AXE scoring
+    bits: binarize(c_o, 128),   // 16 bytes: used for connection scoring
   });
 }
 
@@ -183,20 +178,16 @@ async function advertiseCentroid() {
   });
 }
 
-// AXE peer scoring: Hamming similarity on binarized 128-dim prefix
-Gun.on('opt', function(ctx) {
-  if (!ctx.opt.axe) return;
-  const axe = ctx.opt.axe;
-  axe.opt.peers = async (peers) => {
-    return peers
-      .map(peer => {
-        const entry    = peerCache.get(peer.id);
-        const proximity = entry ? hammingScore(localBits, entry.bits) : 0.5;
-        return { peer, score: proximity };
-      })
-      .sort((a, b) => b.score - a.score)
-      .map(({ peer }) => peer);
-  };
+// Centroid peer scoring: Hamming similarity on binarized 128-dim prefix
+mesh.setPeerScorer(async (peers) => {
+  return peers
+    .map(peer => {
+      const entry     = peerCache.get(peer.id);
+      const proximity = entry ? hammingScore(localBits, entry.bits) : 0.5;
+      return { peer, score: proximity };
+    })
+    .sort((a, b) => b.score - a.score)
+    .map(({ peer }) => peer);
 });
 ```
 
@@ -213,7 +204,7 @@ if (precise > ACCEPT_THRESHOLD) {
 }
 ```
 
-Peers whose ontic centroids are semantically close receive higher AXE scores and more stable connections. The mesh self-organises around semantic proximity: no routing protocol, just connection priorities shaped by centroid affinity.
+Peers whose ontic centroids are semantically close receive higher scores and more stable connections. The mesh self-organises around semantic proximity: no routing protocol, just connection priorities shaped by centroid affinity.
 
 ---
 
@@ -227,7 +218,7 @@ Peers whose ontic centroids are semantically close receive higher AXE scores and
 | Infotactic navigation + tours | Present: approximated over EntityDB KNN samples |
 | Spectral monitoring | Present: single stream unless LFM 2.5 wrapper used |
 | CfC dynamics | Present: Web Worker, closed-form ODE step |
-| Wide sync to other instances | Present: Gun mesh, full event log |
+| Wide sync to other instances | Present: VortexMesh, full event log |
 | Self-dialogue reconciliation | Present: inter-instance inference via mesh |
 | Dream cycle (full consolidation) | Light only: no cap training |
 | Thinking Cap (LoRA adapter) | Absent: weights not modifiable in browser |

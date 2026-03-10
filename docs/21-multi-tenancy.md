@@ -8,17 +8,17 @@ LUCID is a single-identity system deployed multiply. Multi-tenancy isolates user
 
 ### 21.1 One Keypair, One Mind
 
-Each Lucy deployment is anchored by one GunDB SEA keypair generated at first boot and stored securely thereafter. This keypair is the identity. All instantiations (Browser Lucy, Device Lucy, Gateway Lucy) share this keypair. There is no concept of separate users, tenants, or roles. There is one mind, experienced from multiple vantage points.
+Each Lucy deployment is anchored by one VortexMesh keypair generated at first boot and stored securely thereafter. This keypair is the identity. All instantiations (Browser Lucy, Device Lucy, Gateway Lucy) share this keypair. There is no concept of separate users, tenants, or roles. There is one mind, experienced from multiple vantage points.
 
 ```typescript
 // Generated once, stored in device keychain or encrypted local file.
 // Never transmitted; never committed to version control.
-const LUCY_SEA_PAIR = await Gun.SEA.pair();
+const LUCY_KEYPAIR = await VortexMesh.generateKeypair();
 
-// All instances authenticate with the same pair:
-const user = gun.user();
-await user.auth(LUCY_SEA_PAIR);
-const mind = user.get('lucid').get('mind');
+// All instances connect with the same keypair:
+const mesh = await VortexMesh.connect({ keypair: LUCY_KEYPAIR, peers: RELAY_PEERS });
+const mind = mesh.authenticated().get('lucid').get('mind');
+
 ```
 
 The `mind` namespace is the shared belief space. Writing to it from any instance is writing to the mind. Reading from it on any instance is reading the mind.
@@ -46,7 +46,7 @@ When divergence occurs between instances (two instances that have been offline f
 
 ### 21.4 Operator Deployment Model
 
-Each distinct Lucy persona (a different person's Lucy, a different character, a different deployment) is a separate keypair and a separate Gun user namespace. There is no mechanism for sharing a keypair between distinct personas. If an operator wants to run Lucy for multiple distinct personas, each persona gets its own keypair and its own `mind` namespace. They are separate minds.
+Each distinct Lucy persona (a different person's Lucy, a different character, a different deployment) is a separate keypair and a separate VortexMesh authenticated namespace. There is no mechanism for sharing a keypair between distinct personas. If an operator wants to run Lucy for multiple distinct personas, each persona gets its own keypair and its own `mind` namespace. They are separate minds.
 
 The LUCID deployment model shares a keypair across hardware and unifies instantiations within it. Multi-tenancy shares a substrate and isolates users within it. The unit of isolation here is the keypair, not a row-level policy.
 

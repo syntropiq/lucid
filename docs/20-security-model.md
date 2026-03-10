@@ -4,29 +4,29 @@
 
 ## 20. Security Model
 
-The security model is built on two foundations: **SEA identity** for authentication and access control across instances, and **the threat architecture** (§9) for belief-level integrity. There is no server database to protect, no role hierarchy, and no tenant isolation machinery: the system is local-first and single-identity by design.
+The security model is built on two foundations: **VortexMesh keypair identity** for authentication and access control across instances, and **the threat architecture** (§9) for belief-level integrity. There is no server database to protect, no role hierarchy, and no tenant isolation machinery: the system is local-first and single-identity by design.
 
-### 20.1 SEA Identity and Access Control
+### 20.1 VortexMesh Identity and Access Control
 
-GunDB's SEA (Security, Encryption, Authorization) module provides the cryptographic identity layer. The SEA keypair is the only credential in the system.
+VortexMesh provides the cryptographic identity layer. The keypair is the only credential in the system.
 
 ```typescript
-// The keypair grants write access to the Lucy user namespace.
+// The keypair grants write access to the Lucy authenticated namespace.
 // Holders of the private key can write to mind.get('lucid').get('mind').
-// Non-holders can read (Gun is append-only and public by default)
-// but cannot write authenticated data under this user identity.
-const user = gun.user();
-await user.auth(LUCY_SEA_PAIR);   // proves knowledge of private key
+// Non-holders can read (VortexMesh is append-only and public by default)
+// but cannot write authenticated data under this identity.
+const mesh = await VortexMesh.connect({ keypair: LUCY_KEYPAIR, peers: RELAY_PEERS });
+const mind = mesh.authenticated().get('lucid').get('mind');
 ```
 
 **What the keypair protects:**
 - Write access to the shared belief namespace: only authenticated instances can write belief events
-- Instance identity: Gun's SEA challenge-response prevents impersonation of a Lucy instance on the mesh
-- Sync log integrity: events written under the authenticated user namespace are signed; unsigned events are rejected
+- Instance identity: VortexMesh's challenge-response handshake prevents impersonation of a Lucy instance on the mesh
+- Sync log integrity: events written under the authenticated namespace are signed; unsigned events are rejected
 
 **What the keypair does not protect:**
-- Read access: the Gun namespace is readable without authentication. If confidentiality of belief content is required, field-level SEA encryption can be applied to individual node payloads before writing. This is an operator configuration choice.
-- Local storage: IndexedDB and SQLite are protected by the OS and browser origin isolation, not by SEA.
+- Read access: the VortexMesh namespace is readable without authentication. If confidentiality of belief content is required, field-level encryption can be applied to individual node payloads before writing. This is an operator configuration choice.
+- Local storage: IndexedDB and SQLite are protected by the OS and browser origin isolation, not by the mesh keypair.
 
 ### 20.2 Keypair Storage
 
@@ -52,7 +52,7 @@ Gateway Lucy (§29.8) adds a cost-control and anti-thrash layer at the provider 
 - **Thrash detection**: repeated KNN neighbourhood revisitation without epistemic gain halts forwarding
 - **Belief graph as cache**: forwarded calls that return novel content write to the belief graph, reducing future forwarding; this is the primary cost control mechanism over time
 
-Gateway Lucy does not authenticate end users. It authenticates as Lucy (via SEA keypair) on the Gun mesh and authenticates to the upstream provider via the provider's standard API key mechanism. End-user authentication, if required, is the responsibility of the layer in front of Gateway Lucy.
+Gateway Lucy does not authenticate end users. It authenticates as Lucy (via VortexMesh keypair) on the mesh and authenticates to the upstream provider via the provider's standard API key mechanism. End-user authentication, if required, is the responsibility of the layer in front of Gateway Lucy.
 
 ---
 

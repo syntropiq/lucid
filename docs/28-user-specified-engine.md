@@ -376,7 +376,7 @@ Upgrading the ontic model is a heavier migration and is outside the scope of a r
 
 ## 28.10 Substrate Interfaces
 
-Model interfaces cover what thinks. Substrate interfaces cover where state lives and how instances communicate. LUCID defines three substrate interfaces. The core feedback loops call only these interfaces: they do not import EntityDB, IndexedDB, or GunDB directly.
+Model interfaces cover what thinks. Substrate interfaces cover where state lives and how instances communicate. LUCID defines three substrate interfaces. The core feedback loops call only these interfaces: they do not import EntityDB, IndexedDB, or VortexMesh directly.
 
 ```typescript
 // Where vectors are stored and searched.
@@ -435,7 +435,7 @@ interface Mesh {
 | `VectorStore` (ontic) | EntityDB `lucy_ont` collection |
 | `VectorStore` (inference) | EntityDB `lucy_inf` collection |
 | `GraphStore` | IndexedDB typed wrapper |
-| `Mesh` | GunDB over WebRTC/WebSockets |
+| `Mesh` | VortexMesh (browser) |
 
 **Device Lucy** (§29):
 
@@ -444,7 +444,7 @@ interface Mesh {
 | `VectorStore` (ontic) | Lancedb: real HNSW, Node-native |
 | `VectorStore` (inference) | Lancedb |
 | `GraphStore` | SQLite (better-sqlite3) or LevelDB |
-| `Mesh` | GunDB (Node) |
+| `Mesh` | VortexMesh (Node) |
 
 The choice of Lancedb for Device Lucy matters: EntityDB's brute-force cosine is adequate at personal browser scale (thousands of belief nodes) but Device Lucy accumulates the full graph over time including dream cycle consolidation products. Lancedb provides HNSW indices and scales without architectural changes. Same `VectorStore` interface; different constructor passed at boot.
 
@@ -484,7 +484,7 @@ import { nomicEmbedV15 }  from './sue/wrappers/ontic/nomic-embed-v1.5';
 import { makeGenericOnnxWrapper } from './sue/wrappers/inference/generic-onnx';
 import { EntityDBVectorStore }   from './sue/substrate/entitydb-vector-store';
 import { IndexedDBGraphStore }   from './sue/substrate/indexeddb-graph-store';
-import { GunMesh }               from './sue/substrate/gun-mesh';
+import { VortexMesh }            from './sue/substrate/vortex-mesh';
 
 use.registerOntic(nomicEmbedV15);
 use.registerInference(makeGenericOnnxWrapper(OPERATOR_MODEL_CONFIG));
@@ -495,7 +495,7 @@ use.registerSubstrate({
     inf: new EntityDBVectorStore('lucy_inf', OPERATOR_MODEL_ID, INFERENCE_DIM),
   },
   graphStore: new IndexedDBGraphStore('lucid'),
-  mesh:       new GunMesh(GUN_PEERS, LUCY_SEA_PAIR),
+  mesh:       new VortexMesh(RELAY_PEERS, LUCY_KEYPAIR),
 });
 ```
 
@@ -576,9 +576,9 @@ await use.graph().embeddingOntPut(nodeId, full);          // GraphStore: full ve
 
 This separation is deliberate: fast index stores small; precise store keeps large. Neither is the authority for the other.
 
-#### Binary quantization for AXE peer scoring
+#### Binary quantization for centroid peer scoring
 
-Centroid-based peer routing (§27.6) runs on every connection priority update. Floating-point cosine over 128 dimensions is already fast; binarizing it makes it essentially free, which means AXE can re-score all peers on every centroid change without batching or throttling.
+Centroid-based peer routing (§27.6) runs on every connection priority update. Floating-point cosine over 128 dimensions is already fast; binarizing it makes it essentially free, which means VortexMesh can re-score all peers on every centroid change without batching or throttling.
 
 ```typescript
 // src/core/vector-utils.ts
@@ -614,11 +614,11 @@ The peer centroid cache stores two representations per peer:
 ```typescript
 interface PeerCentroidEntry {
   full:  Float32Array;  // 768-dim: used for precise work-packet routing decisions
-  bits:  Uint8Array;    // 16 bytes (128-dim binarized): used for AXE connection scoring
+  bits:  Uint8Array;    // 16 bytes (128-dim binarized): used for centroid connection scoring
 }
 ```
 
-AXE scoring uses `hammingScore(local.bits, peer.bits)`. When a work packet arrives and the accept/forward decision needs precision, it uses `cosineSimilarity(local.full, peer.full)`. Fast screen, precise confirm: the same two-phase logic as the belief graph search, applied to peer routing.
+Centroid peer scoring uses `hammingScore(local.bits, peer.bits)`. When a work packet arrives and the accept/forward decision needs precision, it uses `cosineSimilarity(local.full, peer.full)`. Fast screen, precise confirm: the same two-phase logic as the belief graph search, applied to peer routing.
 
 The binarized centroid is computed once when a peer's `c_o` is received and cached. It is recomputed only when the peer advertises a new centroid. Local `bits` are recomputed when the CfC Worker updates the local `c_o`. Cost: one binarization per centroid update, amortised across every routing decision until the next update.
 

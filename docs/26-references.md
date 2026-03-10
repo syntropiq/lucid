@@ -20,7 +20,7 @@
 
 [8] Adobe Research. (2024). Dialectics for artificial intelligence. *arXiv:2512.17373*.
 
-[9] VORTEX: Verifiable Ontic Routing Through Entangled eXchanges. Semantic Wave Routing for Distributed Reasoning over GunDB Meshes. Version 4.0, March 2026.
+[9] VORTEX: Verifiable Ontic Routing Through Entangled eXchanges. Semantic Wave Routing for Distributed Reasoning over VortexMesh. Version 4.0, March 2026.
 
 [10] Popper, K.R. (1945). *The Open Society and Its Enemies*. Routledge, London.
 

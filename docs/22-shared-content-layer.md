@@ -27,12 +27,12 @@ All sources enter through `sue.graph().nodeUpsert()`. The difference between the
 - Dream cycle cap deltas
 
 **Not externally shared:**
-- The SEA keypair (never transmitted)
+- The VortexMesh keypair (never transmitted)
 - Raw conversation turns (available to all instances of the same identity; not shared with external peers)
 - The local inference model's weights
 
 **Shared with Vortex peers (other identities) on request:**
-- Ontic centroid (`C_o`): advertised via AXE to all mesh peers
+- Ontic centroid (`C_o`): advertised via VortexMesh to all peers
 - Content nominated to the Vortex agenda: shared at `vortex_swim` provenance weight (ρ = 0.4), subject to the receiving peer's own threat architecture
 
 Affective corpus entries, ingress/egress chains, mood tokens, and spectral health records are per-identity by definition: they represent how *this* Lucy experiences content. They are not shared with external Vortex peers, though they do sync between instances of the same identity.

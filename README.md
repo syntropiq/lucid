@@ -41,9 +41,10 @@ The full design document is decomposed into the following sections.
 | 24 | [Tour Engine Architecture](docs/24-tour-engine-architecture.md) | TSP heuristics; Hebbian tour weighting; tour cost metrics |
 | 25 | [USE Substrate Boundaries](docs/25-neurondb-integration.md) | What LUCID delegates to substrates vs what it owns; worker responsibilities; device-scale analytics |
 | 26 | [References](docs/26-references.md) | Citations |
-| 27 | [Browser-Native Instantiation](docs/27-browser-native-instantiation.md) | EntityDB + IndexedDB + GunDB; Worker architecture; AXE centroid routing; wide sync integration |
+| 27 | [Browser-Native Instantiation](docs/27-browser-native-instantiation.md) | EntityDB + IndexedDB + VortexMesh; Worker architecture; centroid peer routing; wide sync integration |
 | 28 | [The User Specified Engine (USE)](docs/28-user-specified-engine.md) | Model contracts (ontic/inference); substrate contracts (VectorStore/GraphStore/Mesh); browser and device implementations |
-| 29 | [Multifocal](docs/29-multifocal.md) | Three instantiation types; SEA identity; wide sync scope; self-dialogue reconciliation; DAM/AXE/SEA integration; Gateway Lucy anti-thrash |
+| 29 | [Multifocal](docs/29-multifocal.md) | Three instantiation types; VortexMesh identity; wide sync scope; self-dialogue reconciliation; CRDT/centroid integration; Gateway Lucy anti-thrash |
+| 30 | [VortexMesh: The Mesh Transport Protocol](docs/30-vortex-protocol.md) | Fragment schema; content-addressed P2P graph; ontic routing; peer scoring hook; fork rationale; the Library vs the mind |
 ---
 
 The v3.1 monolithic design document is at [`LUCID_v3.1.md`](LUCID_v3.1.md). *(Note: the monolith reflects v3.1; the numbered docs above are the authoritative v3.5 design.)*
