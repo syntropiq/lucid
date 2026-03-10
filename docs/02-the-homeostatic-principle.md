@@ -65,7 +65,7 @@ During periods of low operator demand, resources flow toward infotactic navigati
 
 The dream cycle fires not on a schedule but when the CfC displacement from $C_0$ and associated structural metrics indicate that reorganisation is warranted: when the river has moved far enough from its channel that it needs to find its bed again.
 
-This adaptive rhythm (intense external engagement followed by internal reorganisation, with the balance determined by environment and accumulated state) is itself a homeostatic property. It is the system's metabolism.
+This adaptive rhythm (intense external engagement followed by internal reorganisation, with the balance determined by environment and accumulated state) is itself a homeostatic property. It is the system's equivalent of metabolism.
 
 ---
 
