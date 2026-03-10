@@ -2,7 +2,7 @@
 
 ---
 
-# LUCID v3.1
+# LUCID v3.5
 ## Library of Understanding, Contemplative Interoception and Dreams
 ### Persistent Persona State Architecture
 #### System Design Document: March 2026
