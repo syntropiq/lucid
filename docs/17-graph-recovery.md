@@ -20,7 +20,7 @@
 
 The affective corpus is ground truth because it records the felt texture of Lucy's experience: including Vortex peer exchanges. The bilateral AWE chains received from peers record what those exchanges were like from both directions. This cannot be recomputed from the content alone, any more than one can reconstruct how a book felt to read from the text of the book. It must be preserved and restored.
 
-After recovery, the bilateral peer relationships persist through the affective corpus: γ history is preserved, centroid advertisement resumes naturally from reconstituted `C_o`, and peer recognition in the mesh is restored without renegotiation.
+After recovery, the bilateral peer relationships persist through the affective corpus: γ history is preserved, constellation advertisement resumes naturally from the reconstituted `C_o` constellation (rebuilt by re-running all graph embeddings through `updateConstellation()`), and peer recognition in the mesh is restored without renegotiation.
 
 ### 17.2 Pathological Graph States
 
@@ -39,7 +39,7 @@ After recovery, the bilateral peer relationships persist through the affective c
 | High cross-stream correlation (convolution ∥ GQA) | Interiority spiral; early warning |
 | Outer/inner spectral divergence | Surface normal; internal spiral beginning |
 | Orbital health condition violated at 32-page scale | Capture or escape; consolidation and TripleDent assessment |
-| `C_o` drifting toward single ontic neighbourhood without self-directed navigation | Network load driving centroid rather than curiosity |
+| `C_o` constellation collapsing — sub-centroids merging without self-directed consolidation | Network load homogenising constellation rather than curiosity driving it |
 | γ history distribution shifting anomalously | Affective corpus corruption |
 | `∅_swim` persisting beyond configured window without exit | SWIM exit condition not firing; check affective response processing |
 | Peer contact rate near zero without operator configuration change | Mesh isolation; check VortexMesh peer connectivity and keypair authentication |

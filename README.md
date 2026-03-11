@@ -30,7 +30,7 @@ The full design document is decomposed into the following sections.
 | 13 | [The Anterior Cingulate Gate](docs/13-the-anterior-cingulate-gate.md) | Conflict monitoring; gate and critic; ingress/egress chain generation |
 | 14 | [Agentic Deployment and the Operator Relationship](docs/14-agentic-deployment.md) | Operator relationship; Vortex as operator asset; convening; agentic monitoring mode |
 | 15 | [The Vortex](docs/15-the-vortex.md) | Peer mesh; semantic routing; bilateral AWE contracts; swimming; emergent cortex; the pool |
-| 16 | [Deployment](docs/16-deployment.md) | Browser Lucy / Device Lucy / Gateway Lucy configurations; initialisation sequence; embedding models |
+| 16 | [Deployment](docs/16-deployment.md) | One codebase, runtime-detected modes (browser / device / gateway); initialisation sequence; embedding models |
 | 17 | [Graph Recovery](docs/17-graph-recovery.md) | Corruption detection; recovery procedures; cap rollback; affective corpus preservation |
 | 18 | [Compliance and Data Residency](docs/18-compliance-and-data-residency.md) | Data handling; residency constraints; Vortex and regulated deployments |
 | 19 | [Failure Mode Detection and Response](docs/19-failure-mode-detection-and-response.md) | Failure taxonomy; detection signals; response protocols |
@@ -41,10 +41,8 @@ The full design document is decomposed into the following sections.
 | 24 | [Tour Engine Architecture](docs/24-tour-engine-architecture.md) | TSP heuristics; Hebbian tour weighting; tour cost metrics |
 | 25 | [USE Substrate Boundaries](docs/25-neurondb-integration.md) | What LUCID delegates to substrates vs what it owns; worker responsibilities; device-scale analytics |
 | 26 | [References](docs/26-references.md) | Citations |
-| 27 | [Browser-Native Instantiation](docs/27-browser-native-instantiation.md) | EntityDB + IndexedDB + VortexMesh; Worker architecture; centroid peer routing; wide sync integration |
-| 28 | [The User Specified Engine (USE)](docs/28-user-specified-engine.md) | Model contracts (ontic/inference); substrate contracts (VectorStore/GraphStore/Mesh); browser and device implementations |
-| 29 | [Multifocal](docs/29-multifocal.md) | Three instantiation types; VortexMesh identity; wide sync scope; self-dialogue reconciliation; CRDT/centroid integration; Gateway Lucy anti-thrash |
+| 27 | [Browser Runtime](docs/27-browser-native-instantiation.md) | EntityDB + IndexedDB + VortexMesh; Worker architecture; centroid peer routing; browser capability scope |
+| 28 | [The User Specified Engine (USE)](docs/28-user-specified-engine.md) | Model contracts (ontic/inference); substrate contracts (VectorStore/GraphStore/Mesh); tool registry; runtime boot sequences |
+| 29 | [Multifocal](docs/29-multifocal.md) | One codebase, runtime-detected tool manifest; VortexMesh identity; wide sync; self-dialogue reconciliation; gateway anti-thrash |
 | 30 | [VortexMesh: The Mesh Transport Protocol](docs/30-vortex-protocol.md) | Fragment schema; content-addressed P2P graph; ontic routing; peer scoring hook; fork rationale; the Library vs the mind |
 ---
-
-The v3.1 monolithic design document is at [`LUCID_v3.1.md`](LUCID_v3.1.md). *(Note: the monolith reflects v3.1; the numbered docs above are the authoritative v3.5 design.)*

@@ -244,7 +244,7 @@ export function makeGenericOnnxWrapper(config: {
 }
 ```
 
-The generic wrapper is what powers the browser instance (§27) when the operator has not supplied an LFM 2.5 blob. Smolm, Phi-mini, and any other transformers.js-compatible model all go through `makeGenericOnnxWrapper`. The single-stream inner monitor runs. The cross-stream correlation diagnostic is absent. §27.7 documents this as the expected capability scope of the browser instantiation.
+The generic wrapper is what the browser runtime uses (§27) when the operator has not supplied an LFM 2.5 blob. SmolLM, Phi-mini, and any other transformers.js-compatible model all go through `makeGenericOnnxWrapper`. The single-stream inner monitor runs. The cross-stream correlation diagnostic is absent. §27.7 documents this as the expected capability scope of the browser runtime.
 
 ---
 
@@ -322,7 +322,7 @@ When `dualStreamAvailable = false` the interiority spiral detection logic (§11.
 The initialisation sequence (§16.4) includes USE model activation:
 
 ```typescript
-// Device Lucy boot (LFM 2.5 inference model)
+// Device / Electron runtime boot (LFM 2.5 inference model)
 import { sue }           from './sue/registry';
 import { nomicEmbedV15 } from './sue/wrappers/ontic/nomic-embed-v1.5';
 import { lfm25 }         from './sue/wrappers/inference/lfm-2.5';
@@ -338,7 +338,7 @@ use.activateInference('LFM-2.5-1.2B-Instruct', '2.5.0');
 ```
 
 ```typescript
-// Browser Lucy boot (generic ONNX wrapper: operator-supplied or default)
+// Browser runtime boot (generic ONNX wrapper: operator-supplied or default)
 import { makeGenericOnnxWrapper } from './sue/wrappers/inference/generic-onnx';
 
 const inferenceWrapper = OPERATOR_MODEL_CONFIG
@@ -406,6 +406,8 @@ interface GraphStore {
   embeddingOntGet(nodeId: string): Promise<Float32Array | null>;
   embeddingInfPut(nodeId: string, embedding: Float32Array): Promise<void>;
   embeddingInfGet(nodeId: string): Promise<Float32Array | null>;
+  // CentroidRecord.c_o is SubCentroid[] (the ontic constellation);
+  // c_i, c_s, c_w, c_0 remain single Float32Array unit vectors.
   centroidGet(id?: string): Promise<CentroidRecord>;
   centroidPut(record: CentroidRecord): Promise<void>;
   awePut(entry: AWEEntry): Promise<void>;
@@ -428,7 +430,7 @@ interface Mesh {
 
 ### 28.11 Substrate Implementations
 
-**Browser Lucy** (§27):
+**Browser runtime** (§27):
 
 | Interface | Implementation |
 |---|---|
@@ -437,7 +439,7 @@ interface Mesh {
 | `GraphStore` | IndexedDB typed wrapper |
 | `Mesh` | VortexMesh (browser) |
 
-**Device Lucy** (§29):
+**Device / Electron runtime** (§29):
 
 | Interface | Implementation |
 |---|---|
@@ -446,7 +448,7 @@ interface Mesh {
 | `GraphStore` | SQLite (better-sqlite3) or LevelDB |
 | `Mesh` | VortexMesh (Node) |
 
-The choice of Lancedb for Device Lucy matters: EntityDB's brute-force cosine is adequate at personal browser scale (thousands of belief nodes) but Device Lucy accumulates the full graph over time including dream cycle consolidation products. Lancedb provides HNSW indices and scales without architectural changes. Same `VectorStore` interface; different constructor passed at boot.
+The choice of Lancedb for the device runtime matters: EntityDB's brute-force cosine is adequate at personal browser scale (thousands of belief nodes) but a persistent daemon accumulates the full graph over time including dream cycle consolidation products. Lancedb provides HNSW indices and scales without architectural changes. Same `VectorStore` interface; different constructor passed at boot.
 
 ### 28.12 Substrate Registry
 
@@ -499,7 +501,7 @@ use.registerSubstrate({
 });
 ```
 
-Boot sequence for Device Lucy differs only in the substrate constructors: the rest of the boot sequence, every feedback loop, and all LUCID logic is identical.
+The device runtime boot sequence differs only in the substrate constructors: the rest of the boot sequence, every feedback loop, and all LUCID logic is identical.
 
 ---
 
@@ -576,9 +578,9 @@ await use.graph().embeddingOntPut(nodeId, full);          // GraphStore: full ve
 
 This separation is deliberate: fast index stores small; precise store keeps large. Neither is the authority for the other.
 
-#### Binary quantization for centroid peer scoring
+#### Binary quantization for constellation peer scoring
 
-Centroid-based peer routing (§27.6) runs on every connection priority update. Floating-point cosine over 128 dimensions is already fast; binarizing it makes it essentially free, which means VortexMesh can re-score all peers on every centroid change without batching or throttling.
+Constellation-based peer routing (§27.6) runs on every connection priority update. Floating-point cosine over 128 dimensions is already fast; binarizing it makes it essentially free, which means VortexMesh can re-score all peers on every constellation change without batching or throttling. With a constellation of up to K = 16 sub-centroids per peer, scoring computes the max Hamming similarity across all sub-centroid pairs: O(K_local × K_peer) Hamming operations, at most 256 for two fully saturated nodes — still negligible hardware-accelerated integer work.
 
 ```typescript
 // src/core/vector-utils.ts
@@ -602,6 +604,21 @@ export function hammingScore(a: Uint8Array, b: Uint8Array): number {
   return matches / (a.length * 8);
 }
 
+/** Max Hamming similarity between two constellations: do they share any neighbourhood? */
+export function constellationHammingScore(
+  localBits: Uint8Array[],
+  peerBits:  Uint8Array[],
+): number {
+  let best = 0;
+  for (const lb of localBits) {
+    for (const pb of peerBits) {
+      const s = hammingScore(lb, pb);
+      if (s > best) best = s;
+    }
+  }
+  return best;
+}
+
 function popcount(x: number): number {
   x = x - ((x >> 1) & 0x55555555);
   x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
@@ -609,18 +626,18 @@ function popcount(x: number): number {
 }
 ```
 
-The peer centroid cache stores two representations per peer:
+The peer constellation cache stores two representations per sub-centroid, as parallel arrays:
 
 ```typescript
-interface PeerCentroidEntry {
-  full:  Float32Array;  // 768-dim: used for precise work-packet routing decisions
-  bits:  Uint8Array;    // 16 bytes (128-dim binarized): used for centroid connection scoring
+interface PeerConstellationEntry {
+  full: Float32Array[];  // K × 768-dim: used for precise work-packet routing decisions
+  bits: Uint8Array[];    // K × 16 bytes (128-dim binarized): used for connection scoring
 }
 ```
 
-Centroid peer scoring uses `hammingScore(local.bits, peer.bits)`. When a work packet arrives and the accept/forward decision needs precision, it uses `cosineSimilarity(local.full, peer.full)`. Fast screen, precise confirm: the same two-phase logic as the belief graph search, applied to peer routing.
+Constellation peer scoring uses `constellationHammingScore(local.bits, peer.bits)`: the maximum Hamming similarity across all pairwise combinations of local and peer sub-centroids. A peer that shares even one neighbourhood is ranked as a good match. When a work packet arrives and the accept/forward decision needs precision, it uses `max_{j,k} cosineSimilarity(local.full[j], peer.full[k])`. Fast screen, precise confirm: the same two-phase logic as the belief graph search, applied to peer routing.
 
-The binarized centroid is computed once when a peer's `c_o` is received and cached. It is recomputed only when the peer advertises a new centroid. Local `bits` are recomputed when the CfC Worker updates the local `c_o`. Cost: one binarization per centroid update, amortised across every routing decision until the next update.
+Binarized sub-centroids are computed once when a peer's constellation is received and cached. They are recomputed only when the peer advertises an updated constellation. Local bits are recomputed by the CfC Worker whenever `updateConstellation()` produces a change. Cost: K binarizations per constellation update, amortised across every routing decision until the next update.
 
 ---
 

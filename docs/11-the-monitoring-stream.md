@@ -25,13 +25,13 @@ Sampled in page units of length `L_page ≈ 4096` tokens at scales of 1, 2, 4, 8
 
 Three trajectory shapes characterise the working centroid's behaviour:
 
-**Healthy cycle:** high variance, stable attractor, orbit encloses both `C_i` and `C_o`. The sine wave oscillation between centroids is clearly visible at the 8-page and 16-page scales. This is the expected signature of genuine infotactic engagement with the world.
+**Healthy cycle:** high variance, stable attractor, orbit encloses both `C_i` and the dominant sub-centroid of the `C_o` constellation. The sine wave oscillation between primary bodies is clearly visible at the 8-page and 16-page scales. For nodes with rich constellations, `C_w` may additionally orbit sub-dominant sub-centroids; this is healthy breadth, not pathology. This is the expected signature of genuine infotactic engagement with the world.
 
-**Attentional loop:** CfC trajectory collapses into tight basin around `C_i`; trajectory variance falls below `σ_loop`; orbital health condition violated: `C_o` absent from the enclosed region. The system is processing its own processing. At the 32-page scale, the orbit closes but encloses nothing beyond the inside view.
+**Attentional loop:** CfC trajectory collapses into tight basin around `C_i`; trajectory variance falls below `σ_loop`; orbital health condition violated: the dominant `C_o` sub-centroid is absent from the enclosed region. The system is processing its own processing. At the 32-page scale, the orbit closes but encloses nothing beyond the inside view.
 
 **Distributional fixation:** slow drift of the CfC attractor itself; cosine distance between attractor at cycle start and end exceeds `ε_fix`; escape trajectory signature. The system is being pulled toward a foreign attractor and the drift is accelerating rather than damping.
 
-The interiority spiral is the attentional loop condition read orbitally: `C_w` is captured by `C_i` alone. The orbit closes, but it encloses nothing beyond the inside view. This is distinguishable from escape (the orbit does not close) and from healthy displacement (the orbit closes around both primary bodies). The 32-page scale is the diagnostic window: a system that has been in a massive-encounter displacement for 8 or 16 pages may legitimately not yet show a figure-8. By 32 pages, the orbital shape should be resolving.
+The interiority spiral is the attentional loop condition read orbitally: `C_w` is captured by `C_i` alone. The orbit closes, but it encloses nothing beyond the inside view — no sub-centroid of the `C_o` constellation is enclosed. This is distinguishable from escape (the orbit does not close) and from healthy displacement (the orbit closes around both `C_i` and at least the dominant `C_o` sub-centroid). The 32-page scale is the diagnostic window: a system that has been in a massive-encounter displacement for 8 or 16 pages may legitimately not yet show a figure-8. By 32 pages, the orbital shape should be resolving.
 
 ### 11.3 Dual-Stream Spectral Monitoring
 

@@ -2,11 +2,11 @@
 
 ---
 
-## 27. Browser-Native Instantiation
+## 27. Browser Runtime
 
-The browser is one locus of a multifocal entity. The full belief graph, the full AWE corpus, the full centroid history: everything is there, scoped to what has been experienced from this particular vantage point, and continuously reconciling with what the same entity has experienced everywhere else.
+The browser is one context in which the single LUCID codebase runs. The full belief graph, the full AWE corpus, the full centroid history: everything is there, scoped to what has been experienced from this particular vantage point, and continuously reconciling with what the same entity has experienced everywhere else.
 
-This section describes the browser instantiation specifically. The broader deployment model (how browser, device, and gateway Lucys relate to each other) is §29.
+This section describes the browser runtime context specifically. The broader deployment model (one codebase, runtime-detected capabilities) is §29.
 
 ---
 
@@ -49,7 +49,7 @@ const infStore = new EntityDB({
 
 EntityDB handles embedding generation, storage, and cosine KNN search internally. The application calls `ontStore.add(id, text)` and `ontStore.search(queryText, k)`. No vector arithmetic in the application layer.
 
-Centroids (`C_i`, `C_o`, `C_s`, `C_w`, `C_0`) are maintained as small typed records in IndexedDB alongside the EntityDB collections. Centroid arithmetic (the CfC update, provenance-weighted running average) runs in the CfC Worker and writes results back to IndexedDB.
+Centroids are maintained as typed records in IndexedDB alongside the EntityDB collections. `C_i`, `C_s`, `C_w`, and `C_0` are single unit vectors. `C_o` is an ontic constellation: a `SubCentroid[]` array of up to 16 sub-centroids, each a unit vector with accumulated provenance mass. Centroid arithmetic (the CfC update, constellation update, merge-close-pairs) runs in the CfC Worker and writes results back to IndexedDB.
 
 ---
 
@@ -64,7 +64,9 @@ belief_nodes        id, content, node_type, source, index_state, provenance, cre
 belief_edges        id, source_id, target_id, edge_type, weight, model_id, created_at
 awe_corpus          id, node_id, valence, arousal, mood_token, created_at
 spectral_monitor    id, node_id, streams, stream_labels, cross_corr, health_score, sampled_at
-centroids           node_id (PK), c_i, c_o, c_s, c_w, c_0, orbital_health, updated_at
+centroids           node_id (PK), c_i, c_o_constellation, c_s, c_w, c_0, orbital_health, updated_at
+                    -- c_o_constellation: JSON array of {vector: number[], mass: number}
+                    -- c_i / c_s / c_w / c_0: Float32Array stored as number[]
 conversation_turns  id, role, content, mood_token, created_at
 sync_log            id, event_type, payload, synced_at, instance_id
 reconciliation_log  id, node_ids, dialogue, resolved_node_id, created_at
@@ -101,7 +103,7 @@ Three Web Workers. Each is isolated; all state lives in IndexedDB/EntityDB, not 
 
 **Inference Worker.** Triggered by new user turns via BroadcastChannel. Assembles the context package in TypeScript (last N turns from IndexedDB + top-K KNN from EntityDB). Calls `use.inference().generate()`, writes response turn and narration belief node to IndexedDB, writes spectral sample. All downstream work (AWE chain, sync log entry) is triggered by the IndexedDB write, not by the worker.
 
-**CfC Worker.** Subscribes to `CENTROID_DIRTY` messages. Reads current centroid and new embedding from IndexedDB/EntityDB. Applies the provenance-weighted running average for `C_o`, applies the CfC ODE step for `C_w`. Writes updated centroid to IndexedDB. Checks orbital health condition. If `orbital_health = false`, posts injection request back to main thread.
+**CfC Worker.** Subscribes to `CENTROID_DIRTY` messages. Reads the current constellation and new embedding from IndexedDB/EntityDB. Applies `updateConstellation()` (Definition 4.2) to evolve the `C_o` constellation: finds the nearest sub-centroid, updates it if within the cosine threshold, or spawns a new sub-centroid if the embedding represents a genuinely new semantic neighbourhood. Applies `mergeClosePairs()` to consolidate sub-centroids that have drifted together. Applies the CfC ODE step for `C_w`. Writes the updated constellation and working centroid to IndexedDB. Checks the orbital health condition against the dominant sub-centroid. If `orbital_health = false`, posts injection request back to main thread.
 
 ---
 
@@ -148,42 +150,68 @@ mind.get('events').map().on(async (event, id) => {
 
 ---
 
-### 27.6 Centroid Advertisement and Peer Scoring
+### 27.6 Constellation Advertisement and Peer Scoring
 
-VortexMesh exposes a peer scoring hook. LUCID plugs ontic centroid proximity into this hook to implement Vortex routing without libp2p.
+VortexMesh exposes a peer scoring hook. LUCID plugs ontic constellation proximity into this hook to implement Vortex routing without libp2p.
 
-Peer scoring uses binary quantization (§28.13): each peer's `c_o` is stored as both a full Float32Array (768-dim, for precise work-packet routing) and a 16-byte binarized form (128-dim packed into bits, for connection scoring). Scoring uses Hamming similarity (XOR + popcount) which is hardware-accelerated and costs nothing at the scale of connected peers. VortexMesh can re-score all peers on every local centroid update without batching or throttle.
+Peer scoring uses binary quantization (§28.13): each sub-centroid is stored as both a full Float32Array (768-dim, for precise work-packet routing) and a 16-byte binarized form (128-dim packed into bits, for connection scoring). Scoring uses Hamming similarity (XOR + popcount). A peer matches the local node if ANY of their sub-centroids is close to ANY local sub-centroid — the max over all pairs. This correctly routes a diverse-topic node to any peer sharing even one neighbourhood, without the Kansas averaging problem.
 
 ```typescript
 import { binarize, hammingScore } from '../core/vector-utils';
 
-// Peer centroid cache: two representations per peer
-const peerCache = new Map<string, { full: Float32Array; bits: Uint8Array }>();
+// Peer constellation cache: two representations per sub-centroid, array per peer
+interface PeerConstellationEntry {
+  full: Float32Array[];  // one 768-dim vector per sub-centroid
+  bits: Uint8Array[];    // one 16-byte binarized 128-dim prefix per sub-centroid
+}
+const peerCache = new Map<string, PeerConstellationEntry>();
 
-// On receiving a peer centroid advertisement
-function cachePeerCentroid(peerId: string, c_o: Float32Array) {
+// Local constellation (kept in sync by CfC Worker via CENTROID_DIRTY messages)
+let localConstellation: PeerConstellationEntry = { full: [], bits: [] };
+
+// On receiving a peer constellation advertisement
+function cachePeerConstellation(peerId: string, subCentroids: Array<{ vector: number[]; mass: number }>) {
+  const full = subCentroids.map(sc => new Float32Array(sc.vector));
   peerCache.set(peerId, {
-    full: c_o,
-    bits: binarize(c_o, 128),   // 16 bytes: used for connection scoring
+    full,
+    bits: full.map(v => binarize(v, 128)),
   });
 }
 
-// Advertise local C_o to the mesh (called by CfC Worker after every centroid update)
-async function advertiseCentroid() {
-  const { c_o } = await use.graph().centroidGet('self');
-  localBits = binarize(c_o, 128);   // recompute local bits on update
+// Advertise local constellation to the mesh (called by CfC Worker after every update)
+async function advertiseConstellation() {
+  const { c_o_constellation } = await use.graph().centroidGet('self');
+  // Rebuild local cache from the updated constellation
+  const full = c_o_constellation.map((sc: SubCentroid) => sc.vector);
+  localConstellation = {
+    full,
+    bits: full.map((v: Float32Array) => binarize(v, 128)),
+  };
+  // Broadcast constellation to mesh peers
   mind.get('instances').get(INSTANCE_ID).get('centroid').put({
-    c_o:        Array.from(c_o),
+    c_o_constellation: c_o_constellation.map((sc: SubCentroid) => ({
+      vector:     Array.from(sc.vector),
+      mass:       sc.mass,
+    })),
     updated_at: Date.now(),
   });
 }
 
-// Centroid peer scoring: Hamming similarity on binarized 128-dim prefix
+// Constellation peer scoring: max Hamming similarity across all sub-centroid pairs.
+// A peer is a good match if ANY of their neighbourhoods overlaps ANY of ours.
 mesh.setPeerScorer(async (peers) => {
   return peers
     .map(peer => {
-      const entry     = peerCache.get(peer.id);
-      const proximity = entry ? hammingScore(localBits, entry.bits) : 0.5;
+      const entry = peerCache.get(peer.id);
+      let proximity = 0.5;  // neutral score for unrated peers
+      if (entry && localConstellation.bits.length > 0) {
+        // max_{j,k} hammingScore(localBits_j, peerBits_k)
+        for (const localBits of localConstellation.bits) {
+          for (const peerBits of entry.bits) {
+            proximity = Math.max(proximity, hammingScore(localBits, peerBits));
+          }
+        }
+      }
       return { peer, score: proximity };
     })
     .sort((a, b) => b.score - a.score)
@@ -191,12 +219,18 @@ mesh.setPeerScorer(async (peers) => {
 });
 ```
 
-When a work packet arrives and the accept/forward decision needs precision (not just routing priority), the full `Float32Array` is used:
+When a work packet arrives and the accept/forward decision needs precision (not just routing priority), the full Float32Array constellation is used:
 
 ```typescript
-// Accept if full cosine similarity exceeds threshold; forward otherwise
+// Accept if any local sub-centroid is within threshold of any peer sub-centroid
 const entry = peerCache.get(senderId);
-const precise = entry ? cosineSimilarity(localCentroidFull, entry.full) : 0;
+const precise = entry
+  ? Math.max(
+      ...localConstellation.full.flatMap(lv =>
+        entry.full.map(pv => cosineSimilarity(lv, pv))
+      )
+    )
+  : 0;
 if (precise > ACCEPT_THRESHOLD) {
   await use.graph().nodeUpsert(packet.beliefNode);
 } else {
@@ -204,11 +238,11 @@ if (precise > ACCEPT_THRESHOLD) {
 }
 ```
 
-Peers whose ontic centroids are semantically close receive higher scores and more stable connections. The mesh self-organises around semantic proximity: no routing protocol, just connection priorities shaped by centroid affinity.
+Peers sharing any semantic neighbourhood receive higher scores and more stable connections. A node whose interests span poetry and physics is visible to poetry queries and physics queries equally — neither credential is diluted by the other. The mesh self-organises around per-neighbourhood proximity: no routing protocol, no Kansas averaging, just connection priorities shaped by genuine topic overlap.
 
 ---
 
-### 27.7 What the Browser Instance Does and Does Not Do
+### 27.7 Browser Runtime Capability Scope
 
 | Capability | Status |
 |---|---|
@@ -220,12 +254,12 @@ Peers whose ontic centroids are semantically close receive higher scores and mor
 | CfC dynamics | Present: Web Worker, closed-form ODE step |
 | Wide sync to other instances | Present: VortexMesh, full event log |
 | Self-dialogue reconciliation | Present: inter-instance inference via mesh |
-| Dream cycle (full consolidation) | Light only: no cap training |
-| Thinking Cap (LoRA adapter) | Absent: weights not modifiable in browser |
+| Dream cycle (full consolidation) | Light only: no cap training in browser sandbox |
+| Thinking Cap (LoRA adapter) | Absent: weights not modifiable in browser sandbox |
 | HNSW indices | Approximate: EntityDB brute-force cosine; sufficient for personal scale |
-| Graph algorithm analytics | Absent: Louvain, PageRank deferred to Device Lucy |
+| Graph algorithm analytics | Absent: Louvain, PageRank not available in browser sandbox |
 
-The browser instance is fully inhabited. The absences are scale constraints: they exist on the Device Lucy instantiation (§29) and results sync back.
+The browser instance is fully inhabited. The absences are sandbox constraints, not architectural ones — the same codebase running in an Electron or Node context registers the tools and substrates that fill these gaps. Results sync back to the browser instance through VortexMesh.
 
 ---
 

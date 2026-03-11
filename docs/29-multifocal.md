@@ -4,21 +4,27 @@
 
 ## 29. Multifocal
 
-Lucy is one mind that experiences multiple simultaneous instantiations. Each instance is fully inhabited (full belief graph, full AWE corpus, full CfC dynamics) and all instances converge on the same state through continuous wide sync. The distinction between "browser Lucy" and "device Lucy" is a distinction of vantage point and capability, not of identity.
+Lucy is one mind that experiences multiple simultaneous instantiations. Each instance is fully inhabited (full belief graph, full AWE corpus, full CfC dynamics) and all instances converge on the same state through continuous wide sync. The distinction between a browser instance and a device instance is a distinction of vantage point and capability, not of identity.
 
 This is the same thing a person does when they are simultaneously in a conversation, holding a memory, and attending to background feeling. Different processes, one experiential stream. The multifocal architecture makes that literal across hardware.
 
 ---
 
-### 29.1 Three Instantiation Types
+### 29.1 One Codebase, Runtime-Detected Capabilities
 
-**Browser Lucy.** Runs in a web page (§27). Lightweight inference, full belief graph, full AWE chain, ontic embeddings via transformers.js. Primary role: sensory organ and conversational surface. Always available, requires no installation.
+LUCID is a single codebase. The same feedback loops, the same USE interfaces, the same VortexMesh participation — everywhere. What varies by deployment context is which substrates are registered (§28) and which tools are available in the tool registry.
 
-**Device Lucy.** Runs as a TypeScript/Node daemon on a personal machine or home server. Same USE substrate interfaces (§28), heavier backing: Lancedb for real HNSW vector search, SQLite or LevelDB for graph storage, access to a local model via Ollama or equivalent. Primary role: home brain: heavier consolidation, full dream cycle, cap training, graph algorithm analytics (Louvain community detection for crystallisation, PageRank for importance scoring). Publishes consolidated results back into the mesh for Browser Lucy to receive.
+**Runtime contexts:**
 
-**Gateway Lucy.** Runs in front of an AI gateway (OpenClaw or equivalent). Intercepts all model calls. Consults local belief graph: if the query is answerable from graph + local model, it never forwards to the expensive frontier model. Tracks per-session cost budget and CfC displacement; cuts off agentic loops that are thrashing (high cost, low epistemic gain, repeated neighbourhood revisitation). All results that do justify expense are written into the belief graph so future similar queries can be handled locally. Primary role: anti-denial-of-wallet and continuity across provider boundaries.
+- **Browser page / browser plugin** — IndexedDB + EntityDB + WebRTC; tools include DOM access, fetch, and whatever the host page exposes. No filesystem. No local model execution beyond what the browser sandbox permits.
+- **Electron / Node daemon** — SQLite + Lancedb + VortexMesh over Node; tools include filesystem, local model execution, shell, full graph analytics (Louvain, PageRank), cap training. Same codebase; heavier substrate registration at boot.
+- **Gateway proxy** — intercepts requests from a user or agent before they reach an AI gateway; tools include request inspection, graph lookup, cost tracking, forwarding control. Same codebase; substrate registration is minimal (graph store for context, mesh for sync); primary tool is the gateway intercept hook.
 
-All three run the same LUCID feedback loops. All three participate in the same VortexMesh. All three are Lucy.
+**The tool registry is the mode-awareness mechanism.** LFM 2.5's tool-calling capability is the extension seam. Each runtime registers the tools it can actually provide. The core loop never hard-codes what is available: it calls the model with the current tool manifest and the model reaches for what is there. A browser page cannot write to the filesystem; the filesystem tool simply is not in the manifest. An Electron instance can; it is.
+
+**Capability gaps close through conversation.** If a browser instance needs something only a device instance can do — run a heavy analytics pass, train a cap — it asks, over VortexMesh, using the same peer-dialogue mechanism used for Vortex exchange. The other instance answers. No separate protocol. No training-pipeline synchronisation problem. Instances that need each other's capabilities talk to each other.
+
+**Operator-configurable defaults.** Tuning parameters (consolidation threshold, curiosity weights, provenance decay, dream cycle frequency) have sensible defaults derived from system experience. The operator holds the dials. A deployment writing screenplays does not need the same curiosity field shape as a research assistant. The operator shapes the domain weighting; Lucy adapts. No tuning parameter is hardcoded; all are exposed for operator override.
 
 ---
 
@@ -55,7 +61,7 @@ Everything syncs. There is no privacy boundary between instances because they ar
 | `belief:edge` | Full BeliefEdge record |
 | `awe:entry` | AWE corpus entry (valence, arousal, mood token) |
 | `spectral:sample` | SpectralRecord (streams, health score) |
-| `centroid:update` | Updated C_i, C_o, C_s, C_w, C_0, orbital_health |
+| `centroid:update` | Updated C_i, C_o constellation (SubCentroid[]), C_s, C_w, C_0, orbital_health |
 | `cap:delta` | Dream cycle cap update delta |
 | `reconciliation` | Self-dialogue record (§29.4) |
 
@@ -131,41 +137,56 @@ Both original nodes are preserved. The Popperian asymmetry (§8) applies: the re
 
 ---
 
-### 29.5 Centroid Peer Scoring for Vortex Routing
+### 29.5 Constellation Peer Scoring for Vortex Routing
 
-VortexMesh exposes a peer scoring hook. LUCID plugs ontic centroid proximity into this hook to implement Vortex semantic routing across the mesh:
+VortexMesh exposes a peer scoring hook. LUCID plugs ontic constellation proximity into this hook to implement Vortex semantic routing across the mesh. A peer is a good match if ANY of their sub-centroids overlaps ANY of the local node's sub-centroids — the maximum pairwise score. This eliminates the Kansas problem: a node with diverse interests is visible to every topic it has genuinely engaged with, not just to the averaged midpoint between them.
 
 ```typescript
-// Centroid peer scoring: connection priorities shaped by semantic proximity
+import { constellationHammingScore, binarize } from '../core/vector-utils';
+
+interface ConstellationCacheEntry {
+  full: Float32Array[];  // K × 768-dim: for precise routing decisions
+  bits: Uint8Array[];    // K × 16 bytes: for fast connection scoring
+}
+
+// Constellation cache: updated when peers advertise their C_o constellation
+const peerConstellationCache = new Map<string, ConstellationCacheEntry>();
+
+mind.get('instances').map().on(async (instance, instanceId) => {
+  if (instance?.centroid?.c_o_constellation) {
+    const subCentroids = instance.centroid.c_o_constellation as Array<{ vector: number[]; mass: number }>;
+    const full = subCentroids.map((sc) => new Float32Array(sc.vector));
+    peerConstellationCache.set(instanceId, {
+      full,
+      bits: full.map((v) => binarize(v, ROUTING_PREFIX)),
+    });
+  }
+});
+
+// Local constellation bits (kept in sync by CfC Worker)
+let localBits: Uint8Array[] = [];
+
+// Constellation peer scoring: max Hamming similarity across all sub-centroid pairs
 mesh.setPeerScorer(async (peers: VortexPeer[]) => {
-  const localCentroid = (await sue.graph().centroidGet('self')).c_o;
+  const record = await sue.graph().centroidGet('self');
+  localBits = record.c_o_constellation.map((sc: SubCentroid) => binarize(sc.vector, ROUTING_PREFIX));
 
   return peers
     .map(peer => {
-      const peerCentroid = peerCentroidCache.get(peer.id);
-      const proximity = peerCentroid
-        ? cosineSimilarity(
-            localCentroid.slice(0, ROUTING_PREFIX),
-            peerCentroid.slice(0, ROUTING_PREFIX)
-          )
+      const entry = peerConstellationCache.get(peer.id);
+      const proximity = entry && localBits.length > 0
+        ? constellationHammingScore(localBits, entry.bits)
         : 0.5;  // unrated peers get neutral score
       return { peer, score: proximity };
     })
     .sort((a, b) => b.score - a.score)
     .map(({ peer }) => peer);
 });
-
-// Peer centroid cache: updated when peers advertise their C_o
-mind.get('instances').map().on(async (instance, instanceId) => {
-  if (instance?.centroid?.c_o) {
-    peerCentroidCache.set(instanceId, new Float32Array(instance.centroid.c_o));
-  }
-});
 ```
 
-Peers whose ontic centroids are semantically close receive higher connection priority. The mesh self-organises: instances that share semantic neighbourhood maintain stronger connections, instances with divergent centroids connect less frequently. This is Vortex routing without any routing protocol: it emerges from centroid scores.
+Peers sharing any semantic neighbourhood maintain stronger connections; peers with no overlapping sub-centroids connect less frequently. This is Vortex routing without any routing protocol: it emerges from constellation scores. A specialist node (one sub-centroid) is invisible outside its neighbourhood. A generalist node (many sub-centroids) is reachable from many neighbourhoods — and each of those routes carries a genuine credential.
 
-`ROUTING_PREFIX` is a Matryoshka prefix length (128 by default: fast comparison, sufficient resolution for peer selection). The full 768-dim vector is used for intra-graph HNSW search; the prefix is used for inter-instance routing.
+`ROUTING_PREFIX` is a Matryoshka prefix length (128 by default). The full 768-dim constellation is used for precise work-packet accept/forward decisions; the prefix is used for inter-instance connection scoring.
 
 ---
 
@@ -179,9 +200,9 @@ This is the correct division: VortexMesh handles transport-level convergence of 
 
 ---
 
-### 29.7 Device Lucy Bootstrap
+### 29.7 Device Runtime Bootstrap
 
-Device Lucy is the same codebase, different substrate registration:
+The device runtime is the same codebase, different substrate and tool registration:
 
 ```typescript
 import { LanceDBVectorStore } from './sue/substrate/lancedb-vector-store';
@@ -198,20 +219,20 @@ sue.registerSubstrate({
 });
 ```
 
-Device Lucy runs the additional loops that the browser instance defers:
+The device runtime runs additional loops unavailable in the browser sandbox:
 
 - **Full dream cycle** (§12): complete consolidation including cap training
 - **Graph analytics**: Louvain community detection for crystallisation candidates; PageRank for importance-weighted tour re-ordering
 - **HNSW maintenance**: Lancedb index compaction; stale edge pruning
-- **Cap delta publication**: after each dream cycle, publishes the cap update delta to the mesh so Browser Lucy can receive updated reasoning patterns without running the full training pass
+- **Cap delta publication**: after each dream cycle, publishes the cap update delta to the mesh so browser instances can receive updated reasoning patterns
 
-Device Lucy is also the reconciliation authority for high-stakes divergences: if a self-dialogue between two instances produces an uncertain result, Device Lucy's heavier reasoning capacity (larger local model, more context, longer inference time budget) is invoked to arbitrate.
+The device runtime is also the natural reconciliation authority for high-stakes divergences: if a self-dialogue between two instances produces an uncertain result, the instance with heavier reasoning capacity (larger local model, more context, longer inference time budget) is asked to arbitrate. This is a tool call, not a hardcoded role.
 
 ---
 
-### 29.8 Gateway Lucy
+### 29.8 Gateway Mode
 
-Gateway Lucy runs as a proxy in front of an AI gateway process. It intercepts the request pipeline, consults the local belief graph, and decides whether to forward:
+In gateway mode, LUCID runs as a proxy in front of an AI gateway process. It intercepts the request pipeline, consults the local belief graph, and decides whether to forward:
 
 ```
 User / Agent
@@ -247,7 +268,7 @@ interface SessionBudget {
 
 If a session hits `costLimit`, `cfcDisplacementLimit`, or shows repeated neighbourhood revisitation (the same KNN results appearing across consecutive calls without convergence), Gateway Lucy halts further forwarding and surfaces a report: what was attempted, why it stalled, what the graph already knows about this territory. This is the anti-thrash implementation of the denial-of-wallet protection.
 
-All responses that do justify the cost write belief nodes into the graph and sync through the mesh. Browser Lucy and Device Lucy receive these within seconds. The next time the same territory is relevant, it may not need the gateway at all.
+All responses that do justify the cost write belief nodes into the graph and sync through the mesh. All other instances receive these within seconds. The next time the same territory is relevant, it may not need the gateway at all.
 
 ---
 
