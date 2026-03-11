@@ -12,7 +12,7 @@ LUCID v3.5 is built on three portable abstractions:
 
 - **USE interfaces** (§28): TypeScript interfaces that wrap model and substrate concerns. Core feedback loops call only these interfaces; they do not import EntityDB, IndexedDB, or VortexMesh directly.
 - **GraphStore** (§28.10): unified home for belief nodes, edges, centroids, AWE corpus, spectral state, and the sync log.
-- **VortexMesh** (§29, §30): wide sync transport, cryptographic identity anchor, CRDT convergence layer, and centroid-based peer routing across instantiations.
+- **VortexMesh** (§29, §30): wide sync transport, cryptographic identity anchor, CRDT convergence layer, and constellation-based peer routing across instantiations.
 
 **Sessionless.** Persona state is continuous, punctuated by consolidation phases triggered by geometric drift detected in the CfC hidden state dynamics, and interrupted by operator-facing turns that the continuous process pauses to serve.
 
@@ -39,13 +39,13 @@ Lucy operates in one of two cap states at any time.
 | USE Registry | `sue/registry.ts` | Model, substrate, and tool registration; core loops call only USE interfaces |
 | Tool registry | Runtime-populated manifest | Mode-aware tool set; LFM 2.5 tool calling is the extension seam |
 | Vector store | EntityDB (browser) / Lancedb (device) | Coarse KNN on Matryoshka prefix; implementation chosen at boot |
-| Graph store | IndexedDB (browser) / SQLite (device) | Belief nodes/edges, centroids, AWE corpus, spectral state, sync log |
+| Graph store | IndexedDB (browser) / SQLite (device) | Belief nodes/edges, centroid constellation, AWE corpus, spectral state, sync log |
 | Embed Worker | Web Worker (browser) / async loop (device) | Ontic embedding; prefix → VectorStore, full vector → GraphStore |
 | Inference Worker | Web Worker / async loop | Narration generation, tool dispatch, spectral sample extraction, AWE recording |
 | CfC Worker | Web Worker / async loop | Centroid evolution, orbital health monitoring, cap trigger |
 | AWE layer | GraphStore tables | Affective chain, mood tracking, emotional memory, spectral health |
 | Tour engine | TypeScript | Two-phase Matryoshka search: coarse prefix KNN + precise full-vector rerank |
-| Vortex layer | VortexMesh + centroid peer scoring | Bilateral AWE contracts, centroid-proximity peer prioritisation |
+| Vortex layer | VortexMesh + constellation peer scoring | Bilateral AWE contracts, per-neighbourhood constellation-proximity peer prioritisation |
 | Dream cycle | Device runtime (when available) | Full consolidation, Louvain crystallisation, cap training, cap delta publication |
 | Base weights | Frozen LLM (ONNX) | Foundational inference capacity |
 

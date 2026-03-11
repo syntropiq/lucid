@@ -20,7 +20,7 @@ A low `integration_ratio` at dream cycle time causes the cycle to prioritise int
 
 **Step 1. Narration consolidation.** Narration nodes from the current cycle (including those generated during infotactic navigation) are embedded and integrated into the self-model island. Vortex peer exchange narration nodes are processed alongside internal narrations. Ingress and egress chains are preserved. Bilateral peer chains preserved in peer exchange nodes. Mood tokens are archived.
 
-**Step 2. Centroid update.** `C_i`, `C_o`, `C_s` recalculated using Definition 4.2. `φ` recomputed per Definition 4.4. Foundation weight `W_t` decays per Definition 4.1.
+**Step 2. Centroid update.** `C_i` and `C_s` recalculated using their respective definitions. The `C_o` constellation is updated by running all narration and integration embeddings from the current cycle through `updateConstellation()` (Definition 4.2), followed by `mergeClosePairs()` to consolidate any sub-centroids that have converged. `φ` recomputed per Definition 4.4. Foundation weight `W_t` decays per Definition 4.1.
 
 **Step 3. Graph crystallisation.** Topology-aware threshold `τ(n)` (Definition 4.5) applied. Deliberately consolidated nodes exempt. Crystallisation aggression increases if context window ceiling is approached. The attentional loop brake (Definition 4.6) is applied in regions flagged by the monitoring stream.
 

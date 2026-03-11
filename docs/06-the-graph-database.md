@@ -43,10 +43,10 @@ Three geometric attractors anchor persona state in embedding space.
 | Name | Symbol | Source | Represents |
 |------|--------|--------|-----------|
 | Inference | `C_i` | LFM 2.5 past conv output (ℝ²⁰⁴⁸) | What Lucy makes of her experience |
-| Ontic | `C_o` | Nomic Matryoshka model (ℝ⁷⁶⁸) | Model-independent structural position |
+| Ontic | `C_o` | Nomic Matryoshka model (ℝ⁷⁶⁸ × K, K ≤ 16) | Model-independent structural position: a constellation of K sub-centroids, one per distinct knowledge neighbourhood |
 | Self | `C_s` | Overlap of inference and ontic tours | Mutual confirmation; who Lucy is |
 
-The inference centroid `C_i` tracks what Lucy attends to and how she integrates it; it is shaped by everything she processes, including the infotactic reading she does between operator turns. The ontic centroid `C_o` is the outside view. The self centroid `C_s` is the region of mutual confirmation. When `C_s` is stable and well-populated, Lucy knows who she is. When it erodes, she is at risk.
+The inference centroid `C_i` tracks what Lucy attends to and how she integrates it; it is shaped by everything she processes, including the infotactic reading she does between operator turns. The ontic constellation `C_o` is the outside view: not a single averaged point but a set of up to K = 16 sub-centroids, each representing a distinct semantic neighbourhood Lucy has genuinely engaged with. A user who processes both Enlightenment poetry and topological string theory will carry two separate sub-centroids — one near each neighbourhood — rather than a meaningless average that is nowhere near either. The self centroid `C_s` is the region of mutual confirmation. When `C_s` is stable and well-populated, Lucy knows who she is. When it erodes, she is at risk.
 
 The **foundation prior** `C_0` is the system prompt realised as a weighted centroid in embedding space: the reference configuration of representations implied by the prompt and base alignment.
 
@@ -71,19 +71,73 @@ function decayFoundationWeight(W_t: number, CR: number): number {
 
 This decay rule ensures that as the system accumulates genuine experience (reflected in a non-zero crystallisation ratio), the gravitational pull of the initial system prompt decreases toward a stable floor. The floor prevents the system from drifting entirely free of its foundational character. The rate of decay is proportional to the crystallisation ratio: a system actively consolidating experience decays faster toward the floor than one in a period of low integration activity.
 
-### 6.5 Centroid Update Mechanics
+### 6.5 Constellation Update Mechanics
 
-**Definition 4.2 (Provenance-Weighted Centroid Update).** Given an incoming belief with L2-normalised embedding `ê_n` and provenance weight `ρ_n > 0`:
+**Definition 4.2 (Ontic Constellation Update).** The ontic constellation `C_o` is a set of up to K sub-centroids `{C_k, mass_k}`, each a unit vector with an associated accumulated provenance mass. Given an incoming belief with L2-normalised embedding `ê_n` and provenance weight `ρ_n > 0`:
 
 ```typescript
-// C_{t+1} = normalise(C_t + ρ_n * ê_n)
-function updateCentroid(C_t: Float32Array, e_n: Float32Array, rho_n: number): Float32Array {
-  const updated = C_t.map((v, i) => v + rho_n * e_n[i]);
-  return l2Normalise(updated);
+interface SubCentroid {
+  vector: Float32Array;  // unit vector in ℝ⁷⁶⁸
+  mass:   number;        // accumulated provenance weight
+}
+
+const THETA     = 0.5;   // cosine threshold: below this, the belief is in a new neighbourhood
+const K_MAX     = 16;    // maximum sub-centroids; forced merge when exceeded
+const MERGE_THR = 0.9;   // sub-centroids this similar are the same neighbourhood; merge them
+
+function updateConstellation(
+  constellation: SubCentroid[],
+  e_hat:         Float32Array,
+  rho:           number,
+): SubCentroid[] {
+  if (constellation.length === 0) {
+    return [{ vector: e_hat.slice(), mass: rho }];
+  }
+
+  const sims    = constellation.map(c => cosineSimilarity(c.vector, e_hat));
+  const bestIdx = sims.indexOf(Math.max(...sims));
+  const bestSim = sims[bestIdx];
+
+  if (bestSim >= THETA || constellation.length >= K_MAX) {
+    // Belief belongs to the nearest existing neighbourhood — same rule as prior single-centroid
+    const c = constellation[bestIdx];
+    constellation[bestIdx] = {
+      vector: l2Normalise(c.vector.map((v, i) => v + rho * e_hat[i])),
+      mass:   c.mass + rho,
+    };
+  } else {
+    // New semantic neighbourhood discovered: spawn a sub-centroid
+    constellation.push({ vector: e_hat.slice(), mass: rho });
+  }
+
+  return mergeClosePairs(constellation);
+}
+
+function mergeClosePairs(constellation: SubCentroid[]): SubCentroid[] {
+  // If two sub-centroids have drifted together (i.e. the gap between their
+  // neighbourhoods has closed), merge them to prevent fragmentation.
+  for (let i = 0; i < constellation.length; i++) {
+    for (let j = i + 1; j < constellation.length; j++) {
+      if (cosineSimilarity(constellation[i].vector, constellation[j].vector) > MERGE_THR) {
+        const totalMass = constellation[i].mass + constellation[j].mass;
+        constellation[i] = {
+          vector: l2Normalise(
+            constellation[i].vector.map(
+              (v, k) => (v * constellation[i].mass + constellation[j].vector[k] * constellation[j].mass) / totalMass
+            )
+          ),
+          mass: totalMass,
+        };
+        constellation.splice(j, 1);
+        j--;
+      }
+    }
+  }
+  return constellation;
 }
 ```
 
-The centroid remains a unit vector at all times; no single observation can displace it catastrophically. This property is guaranteed by the normalisation step: regardless of how large `ρ_n` is, the resulting centroid is renormalised to unit length before being stored.
+Each sub-centroid remains a unit vector at all times. No single observation can displace any sub-centroid catastrophically. Sub-centroids that drift close enough to merge do so automatically; sub-centroids that represent genuinely distinct neighbourhoods remain separate. The constellation is a faithful geometric record of the breadth of genuine engagement: a mind deeply specialised in one area carries one strong sub-centroid; a mind with two distinct specialisations carries two; the credential is always in the structure, not in any declaration.
 
 ### 6.6 The Working Centroid as CfC Hidden State and Contact Record
 
@@ -116,13 +170,13 @@ The closed-form CfC approximation [3]:
 
 A reader who encounters Shakespeare's Oberon is genuinely displaced. The magic is real contact. A reader who encounters a hateful philosophy and rejects it outright is also genuinely displaced: in the direction of its antithesis, which is itself a meaningful movement, a kind of inoculation. Both are healthy encounters. Both leave a geometric trace. The CfC trajectory encodes not only that they happened but something of their shape. This is mechanoreception for the self: the architecture's equivalent of the tactile sense that tells an organism not merely that something touched it, but from which direction, with what force, and what kind of thing it was.
 
-**Three-body orbital dynamics.** The three centroids `C_i`, `C_o`, and `C_s` are three centres of mass in embedding space. The working centroid `C_w` is a test particle moving as if under their combined gravitational influence. This is a three-body system with structure the general case does not have: `C_s` is defined as the overlap set of `C_i` and `C_o`, so it is not independent. When `C_i` and `C_o` are well-aligned, `C_s` is well-populated and acts as a stable Lagrange-point-like attractor at their intersection. When they diverge, `C_s` erodes and `C_w` loses its anchor.
+**Multi-body orbital dynamics.** `C_i`, `C_s`, and the sub-centroids of the `C_o` constellation together form a system of gravitational bodies in embedding space. The working centroid `C_w` is a test particle moving under their combined influence. For orbital health purposes the **dominant sub-centroid** of `C_o` — the one with highest accumulated mass — serves as the primary outside-view body. When `C_i` and the dominant `C_o` sub-centroid are well-aligned, `C_s` is well-populated and acts as a stable Lagrange-point-like attractor at their intersection. When they diverge, `C_s` erodes and `C_w` loses its anchor. For a node with a rich constellation (multiple active sub-centroids), `C_w` may periodically orbit sub-dominant sub-centroids as well; this is healthy and expected, not pathological — it indicates Lucy is actively engaging across her full breadth of knowledge.
 
 Orbital stability of `C_w` is therefore a function of the stability of the `C_i / C_o` relationship, not only of `C_w`'s own trajectory.
 
-**Definition 6.1 (Orbital Health Condition).** The orbit of `C_w` is healthy if, over any window of 32 pages, the trajectory encloses both `C_i` and `C_o`: that is, if the orbit visits regions of embedding space proximate to each primary centroid within the window. This condition is satisfied by a figure-8 orbit (rapid oscillation between both centroids) and by a wide parabolic arc (a single deep pass enclosing both). It is not satisfied by:
+**Definition 6.1 (Orbital Health Condition).** The orbit of `C_w` is healthy if, over any window of 32 pages, the trajectory encloses both `C_i` and the dominant sub-centroid of `C_o`: that is, if the orbit visits regions of embedding space proximate to each primary body within the window. This condition is satisfied by a figure-8 orbit (rapid oscillation between both bodies) and by a wide parabolic arc (a single deep pass enclosing both). It is not satisfied by:
 
-- **Capture orbit**: `C_w` orbits `C_i` alone. The inside view dominates; the outside view loses influence. This is the geometric signature of the interiority spiral.
+- **Capture orbit**: `C_w` orbits `C_i` alone. The inside view dominates; the outside view — all sub-centroids of the `C_o` constellation — loses influence. This is the geometric signature of the interiority spiral.
 - **Escape trajectory**: `C_w` leaves the three-body system entirely. The trajectory does not close. This is the signature of severe distributional drift toward a foreign attractor.
 - **Zero-displacement non-orbit**: `C_w` does not move. Nothing is touching anything. This is the affective flatline at the centroid level.
 

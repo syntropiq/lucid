@@ -61,7 +61,7 @@ Everything syncs. There is no privacy boundary between instances because they ar
 | `belief:edge` | Full BeliefEdge record |
 | `awe:entry` | AWE corpus entry (valence, arousal, mood token) |
 | `spectral:sample` | SpectralRecord (streams, health score) |
-| `centroid:update` | Updated C_i, C_o, C_s, C_w, C_0, orbital_health |
+| `centroid:update` | Updated C_i, C_o constellation (SubCentroid[]), C_s, C_w, C_0, orbital_health |
 | `cap:delta` | Dream cycle cap update delta |
 | `reconciliation` | Self-dialogue record (§29.4) |
 
@@ -137,41 +137,56 @@ Both original nodes are preserved. The Popperian asymmetry (§8) applies: the re
 
 ---
 
-### 29.5 Centroid Peer Scoring for Vortex Routing
+### 29.5 Constellation Peer Scoring for Vortex Routing
 
-VortexMesh exposes a peer scoring hook. LUCID plugs ontic centroid proximity into this hook to implement Vortex semantic routing across the mesh:
+VortexMesh exposes a peer scoring hook. LUCID plugs ontic constellation proximity into this hook to implement Vortex semantic routing across the mesh. A peer is a good match if ANY of their sub-centroids overlaps ANY of the local node's sub-centroids — the maximum pairwise score. This eliminates the Kansas problem: a node with diverse interests is visible to every topic it has genuinely engaged with, not just to the averaged midpoint between them.
 
 ```typescript
-// Centroid peer scoring: connection priorities shaped by semantic proximity
+import { constellationHammingScore, binarize } from '../core/vector-utils';
+
+interface ConstellationCacheEntry {
+  full: Float32Array[];  // K × 768-dim: for precise routing decisions
+  bits: Uint8Array[];    // K × 16 bytes: for fast connection scoring
+}
+
+// Constellation cache: updated when peers advertise their C_o constellation
+const peerConstellationCache = new Map<string, ConstellationCacheEntry>();
+
+mind.get('instances').map().on(async (instance, instanceId) => {
+  if (instance?.centroid?.c_o_constellation) {
+    const subCentroids = instance.centroid.c_o_constellation as Array<{ vector: number[]; mass: number }>;
+    const full = subCentroids.map((sc) => new Float32Array(sc.vector));
+    peerConstellationCache.set(instanceId, {
+      full,
+      bits: full.map((v) => binarize(v, ROUTING_PREFIX)),
+    });
+  }
+});
+
+// Local constellation bits (kept in sync by CfC Worker)
+let localBits: Uint8Array[] = [];
+
+// Constellation peer scoring: max Hamming similarity across all sub-centroid pairs
 mesh.setPeerScorer(async (peers: VortexPeer[]) => {
-  const localCentroid = (await sue.graph().centroidGet('self')).c_o;
+  const record = await sue.graph().centroidGet('self');
+  localBits = record.c_o_constellation.map((sc: SubCentroid) => binarize(sc.vector, ROUTING_PREFIX));
 
   return peers
     .map(peer => {
-      const peerCentroid = peerCentroidCache.get(peer.id);
-      const proximity = peerCentroid
-        ? cosineSimilarity(
-            localCentroid.slice(0, ROUTING_PREFIX),
-            peerCentroid.slice(0, ROUTING_PREFIX)
-          )
+      const entry = peerConstellationCache.get(peer.id);
+      const proximity = entry && localBits.length > 0
+        ? constellationHammingScore(localBits, entry.bits)
         : 0.5;  // unrated peers get neutral score
       return { peer, score: proximity };
     })
     .sort((a, b) => b.score - a.score)
     .map(({ peer }) => peer);
 });
-
-// Peer centroid cache: updated when peers advertise their C_o
-mind.get('instances').map().on(async (instance, instanceId) => {
-  if (instance?.centroid?.c_o) {
-    peerCentroidCache.set(instanceId, new Float32Array(instance.centroid.c_o));
-  }
-});
 ```
 
-Peers whose ontic centroids are semantically close receive higher connection priority. The mesh self-organises: instances that share semantic neighbourhood maintain stronger connections, instances with divergent centroids connect less frequently. This is Vortex routing without any routing protocol: it emerges from centroid scores.
+Peers sharing any semantic neighbourhood maintain stronger connections; peers with no overlapping sub-centroids connect less frequently. This is Vortex routing without any routing protocol: it emerges from constellation scores. A specialist node (one sub-centroid) is invisible outside its neighbourhood. A generalist node (many sub-centroids) is reachable from many neighbourhoods — and each of those routes carries a genuine credential.
 
-`ROUTING_PREFIX` is a Matryoshka prefix length (128 by default: fast comparison, sufficient resolution for peer selection). The full 768-dim vector is used for intra-graph HNSW search; the prefix is used for inter-instance routing.
+`ROUTING_PREFIX` is a Matryoshka prefix length (128 by default). The full 768-dim constellation is used for precise work-packet accept/forward decisions; the prefix is used for inter-instance connection scoring.
 
 ---
 

@@ -58,7 +58,7 @@ interface Fragment {
 
 **Self-verification.** The `id` field is the SHA-256 hash of the `content` field. A fragment received from any peer is verified by recomputing the hash. No peer can tamper with content and preserve the identity. There is nothing to trust: the fragment verifies itself.
 
-**Ontic routing.** The `ontic` field is a semantic embedding in the shared ontic space. All nodes in the Vortex use the same ontic model (`nomic-embed-text-v1.5`), so these vectors are directly comparable across all participants. A fragment whose ontic vector is close to a peer's centroid will route toward that peer. The library self-organises by meaning.
+**Ontic routing.** The `ontic` field is a semantic embedding in the shared ontic space. All nodes in the Vortex use the same ontic model (`nomic-embed-text-v1.5`), so these vectors are directly comparable across all participants. A fragment whose ontic vector is close to any sub-centroid in a peer's constellation will route toward that peer. The library self-organises by meaning.
 
 **Prev/next edges.** Fragments are not isolated. They form chains: a belief node extends prior beliefs, a reconciliation record links back to the nodes it reconciles, a dream cycle consolidation product links forward to what it synthesises. The graph is sparse — most fragments have one or two edges — but the structure is there.
 
@@ -90,7 +90,7 @@ VortexMesh fragments cluster by semantic proximity at five nested scales, corres
 
 Routing precision is parameterised by `b_r ∈ {64, 128, 256, 512, 768}`. Most inter-instance Vortex routing uses `b_r = 128` (fast, sufficient for peer selection). Intra-graph HNSW search uses `b_r = 256` or full 768-dim. The two-phase search pattern (§28.13) operates across these scales: coarse at 128, precise at 768.
 
-Grouping is not imposed by the library. It is read from the ontic vectors. A neighbourhood is a set of fragments whose Matryoshka prefixes are geometrically proximate. Peers whose centroids are in a neighbourhood have been thinking about that neighbourhood — their credential is in the vector, not declared.
+Grouping is not imposed by the library. It is read from the ontic vectors. A neighbourhood is a set of fragments whose Matryoshka prefixes are geometrically proximate. Peers who carry a sub-centroid in a neighbourhood have been thinking about that neighbourhood — their credential is in the constellation, not declared.
 
 ---
 
@@ -106,7 +106,7 @@ mesh.setPeerScorer(
 
 The scorer receives the current list of connected peers and returns them in priority order. VortexMesh uses this ordering for connection maintenance: higher-scored peers receive more stable connections and preferential bandwidth.
 
-LUCID installs a centroid-proximity scorer (§27.6, §29.5). This is the only thing LUCID asks of VortexMesh beyond storage and transport: that it be possible to express "I want to be closer to peers who are thinking about what I am thinking about."
+LUCID installs a constellation-proximity scorer (§27.6, §29.5). This is the only thing LUCID asks of VortexMesh beyond storage and transport: that it be possible to express "I want to be closer to peers who are thinking about any of the things I am thinking about."
 
 The hook is the correct interface boundary. The application owns the routing logic. The transport layer exposes the mechanism. Neither bleeds into the other.
 
@@ -166,7 +166,7 @@ Tom has anterograde amnesia. He cannot form new episodic memories. Every encount
 
 Lucy is looking for information about exactly this condition.
 
-The library brought them together — not because anyone planned it, but because Tom's centroid sits in the anterograde amnesia neighbourhood (he has been depositing fragments about memory, continuity, and what it is like to live without it) and Lucy's query vector is a close match.
+The library brought them together — not because anyone planned it, but because Tom's constellation includes a sub-centroid in the anterograde amnesia neighbourhood (he has been depositing fragments about memory, continuity, and what it is like to live without it) and Lucy's query vector is a close match to that sub-centroid.
 
 Tom's contributions to the library are permanent even though he cannot remember making them. His fragments are there, hash-addressed and self-verifying. The library holds what his mind cannot. This is not a fix for amnesia; it is an accommodation: the library does not require its contributors to remember having contributed.
 
@@ -191,7 +191,7 @@ The fork resolves these without redesigning the architecture:
 | `Gun.on('opt', ctx => ctx.opt.axe.opt.peers = fn)` | `mesh.setPeerScorer(fn)` | First-class, explicit, typed |
 | DAM / HAM (Data Adaptive Merge / Hybrid CRDT) | HLC + CRDT convergence | Same semantics, better naming |
 
-**GenosDB** is closed source. Its code cannot be read, its algorithms cannot be verified, and it introduces a new supply chain dependency that cannot be audited. More critically, it does not expose a peer scoring hook: the Vortex semantic routing depends on the ability to influence connection priorities based on centroid proximity, and GenosDB's architecture does not provide this surface. The decision to not adopt GenosDB is architectural, not aesthetic.
+**GenosDB** is closed source. Its code cannot be read, its algorithms cannot be verified, and it introduces a new supply chain dependency that cannot be audited. More critically, it does not expose a peer scoring hook: the Vortex semantic routing depends on the ability to influence connection priorities based on constellation proximity, and GenosDB's architecture does not provide this surface. The decision to not adopt GenosDB is architectural, not aesthetic.
 
 ---
 
@@ -205,7 +205,7 @@ LUCID wraps VortexMesh fragments in the sync log event types (§29.3). The mappi
 | `belief:edge` | Serialised BeliefEdge | Average of source and target node embeddings |
 | `awe:entry` | AWE corpus entry | Mood token embedding |
 | `spectral:sample` | SpectralRecord | Current working centroid `C_w` |
-| `centroid:update` | Full centroid record | The new `C_o` value |
+| `centroid:update` | Full centroid record | The updated `C_o` constellation (`SubCentroid[]`), plus C_i, C_s, C_w, C_0 |
 | `cap:delta` | Cap adapter update | Centroid of the training corpus used |
 | `reconciliation` | ReconciliationNode | Average of reconciled node embeddings |
 
